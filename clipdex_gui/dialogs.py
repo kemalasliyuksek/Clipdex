@@ -12,7 +12,7 @@ class SnippetDialog(QDialog):
         form_layout = QFormLayout()
 
         self.shortcut_input = QLineEdit(shortcut)
-        self.shortcut_input.setPlaceholderText(":kısayol")
+        self.shortcut_input.setPlaceholderText("kısayol")
         self.expansion_input = QTextEdit(expansion)
         self.expansion_input.setPlaceholderText("Genişletilecek metni buraya yazın.")
 
@@ -31,9 +31,11 @@ class SnippetDialog(QDialog):
     def get_data(self):
         """Dialogdaki verileri döndürür."""
         shortcut = self.shortcut_input.text().strip()
-        # Kısayolun başında ':' yoksa ekle
-        if shortcut and not shortcut.startswith(':'):
-            shortcut = ':' + shortcut
+
+        # Kullanıcının yanlışlıkla bir veya daha fazla ':' karakteri yazması durumunda
+        # bunları temizleyerek yalnızca kısayol adını saklayalım. Dinleyici ilk ':'
+        # karakterini zaten tetikleyici olarak ele alıyor.
+        shortcut = shortcut.lstrip(':')
 
         return {
             "shortcut": shortcut,
