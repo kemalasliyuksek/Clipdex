@@ -1,5 +1,3 @@
-# clipdex_gui/dialogs.py
-
 from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QLineEdit, QTextEdit,
                              QFormLayout, QDialogButtonBox, QLabel)
 
