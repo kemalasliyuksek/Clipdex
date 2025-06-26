@@ -1,5 +1,3 @@
-# main.py
-
 import sys
 import threading
 from PyQt6.QtWidgets import QApplication
@@ -7,33 +5,33 @@ from PyQt6.QtWidgets import QApplication
 from clipdex_gui.main_window import MainWindow
 from clipdex_core.listener import ClipdexListener
 
-# Dinleyiciyi çalıştıracak olan fonksiyon
+# Run the backend listener
 def run_backend_listener():
     """
-    Clipdex klavye dinleyici motorunu başlatır ve çalışır durumda tutar.
+    Starts and keeps the Clipdex keyboard listener running.
     """
-    print("Backend listener thread'i başlatılıyor...")
+    print("Backend listener thread started...")
     clipdex_engine = ClipdexListener()
     clipdex_engine.start()
-    clipdex_engine.join() # Thread'in bitmesini bekle
+    clipdex_engine.join() # Wait for the thread to finish
     print("Backend listener thread'i durdu.")
 
 def main():
     """
-    Uygulamanın ana giriş noktası.
-    GUI'yi başlatır ve backend'i ayrı bir thread'de çalıştırır.
+    The main entry point of the application.
+    Starts the GUI and runs the backend in a separate thread.
     """
-    # 1. Backend dinleyiciyi ayrı bir daemon thread'de başlat
-    # daemon=True, ana uygulama (GUI) kapandığında bu thread'in de otomatik kapanmasını sağlar.
+    # 1. Start the backend listener in a separate daemon thread
+    # daemon=True, the main application (GUI) will automatically close this thread when it exits.
     listener_thread = threading.Thread(target=run_backend_listener, daemon=True)
     listener_thread.start()
 
-    # 2. PyQt GUI uygulamasını başlat
+    # 2. Start the PyQt GUI application
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()
 
-    # Uygulama döngüsünü başlat ve çıkış kodunu bekle
+    # Start the application loop and wait for the exit code
     sys.exit(app.exec())
 
 

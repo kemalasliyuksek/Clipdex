@@ -1,8 +1,8 @@
 import time
 from pynput import keyboard as pynput_keyboard
 import keyboard as system_keyboard
-from .snippet_manager import SnippetManager  # Relative import
-import os  # Dosya zaman damgası takip etmek için
+from .snippet_manager import SnippetManager
+import os
 from typing import Optional
 
 class ClipdexListener:
@@ -17,15 +17,15 @@ class ClipdexListener:
         self.current_shortcut = ""
         self.is_listening = False
 
-        # Kısayol dosyasının son değişiklik zamanını takip et
+        # Track the last modified time of the snippet file
         self._snippet_file_mtime: Optional[float] = self._get_snippet_file_mtime()
 
-        # pynput dinleyicisini başlatmaya hazırla
+        # Prepare the pynput listener
         self.listener = pynput_keyboard.Listener(on_press=self.on_press)
 
     def start(self):
         """Starts the listener."""
-        print("Clipdex engine running... Stop with (Ctrl+C).")
+        print("Clipdex engine running...")
         self.listener.start()
 
     def join(self):
@@ -34,7 +34,7 @@ class ClipdexListener:
 
     def on_press(self, key):
         """Function triggered on every key press."""
-        # Her tuş basımında kısayol listesini güncel tut
+        # Update the snippet list on every key press
         self._refresh_snippets_if_needed()
 
         try:
@@ -81,23 +81,23 @@ class ClipdexListener:
             self.current_shortcut = ""
 
     # ------------------------------------------------------------------
-    # Yardımcı Metotlar
+    # Helper Methods
     # ------------------------------------------------------------------
 
     def _get_snippet_file_mtime(self) -> float:
-        """JSON dosyasının son değiştirilme zaman damgasını döndürür."""
+        """Returns the last modified time of the snippet file."""
         if os.path.exists(self.snippet_manager.filepath):
             return os.path.getmtime(self.snippet_manager.filepath)
         return 0.0
 
     def _refresh_snippets_if_needed(self):
-        """Dosya değiştiyse kısayol sözlüğünü yeniden yükler."""
+        """Reloads the snippet list if the file has been modified."""
         try:
             current_mtime = self._get_snippet_file_mtime()
             if current_mtime != self._snippet_file_mtime:
                 self.snippets = self.snippet_manager.load_snippets()
                 self._snippet_file_mtime = current_mtime
-                print("Kısayol listesi güncellendi.")
+                print("Snippet list updated.")
         except Exception as e:
-            # Dosya okunurken hata olursa motoru çökertme
-            print(f"Kısayol güncelleme hatası: {e}")
+            # If there's an error reading the file, don't crash the engine
+            print(f"Snippet update error: {e}")

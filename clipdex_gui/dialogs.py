@@ -6,35 +6,35 @@ from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QLineEdit, QTextEdit,
 class SnippetDialog(QDialog):
     def __init__(self, parent=None, shortcut="", expansion=""):
         super().__init__(parent)
-        self.setWindowTitle("Kısayol Ekle/Düzenle")
+        self.setWindowTitle("Add/Edit Snippet")
 
-        self.layout = QVBoxLayout(self)
+        self.main_layout = QVBoxLayout(self)
         form_layout = QFormLayout()
 
         self.shortcut_input = QLineEdit(shortcut)
-        self.shortcut_input.setPlaceholderText("kısayol")
+        self.shortcut_input.setPlaceholderText("shortcut")
         self.expansion_input = QTextEdit(expansion)
-        self.expansion_input.setPlaceholderText("Genişletilecek metni buraya yazın.")
+        self.expansion_input.setPlaceholderText("Enter the text to expand.")
 
-        form_layout.addRow(QLabel("Kısayol:"), self.shortcut_input)
-        form_layout.addRow(QLabel("Metin:"), self.expansion_input)
+        form_layout.addRow(QLabel("Shortcut:"), self.shortcut_input)
+        form_layout.addRow(QLabel("Text:"), self.expansion_input)
 
-        self.layout.addLayout(form_layout)
+        self.main_layout.addLayout(form_layout)
 
-        # Standart OK ve Cancel butonları
+        # Standard OK and Cancel buttons
         self.button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.reject)
 
-        self.layout.addWidget(self.button_box)
+        self.main_layout.addWidget(self.button_box)
 
     def get_data(self):
-        """Dialogdaki verileri döndürür."""
+        """Returns the data from the dialog."""
         shortcut = self.shortcut_input.text().strip()
 
-        # Kullanıcının yanlışlıkla bir veya daha fazla ':' karakteri yazması durumunda
-        # bunları temizleyerek yalnızca kısayol adını saklayalım. Dinleyici ilk ':'
-        # karakterini zaten tetikleyici olarak ele alıyor.
+        # If the user accidentally enters one or more ':' characters,
+        # clean them up and only save the shortcut name. The listener already
+        # handles the first ':' character as the trigger.
         shortcut = shortcut.lstrip(':')
 
         return {
