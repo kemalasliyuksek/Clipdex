@@ -1,6 +1,7 @@
 import sys
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QTableWidget, QTableWidgetItem,
-                             QPushButton, QVBoxLayout, QWidget, QHBoxLayout, QHeaderView, QMessageBox)
+                             QPushButton, QVBoxLayout, QWidget, QHBoxLayout, QHeaderView, QMessageBox,
+                             QTabWidget, QLabel, QTextEdit)
 
 from clipdex_gui.dialogs import SnippetDialog
 
@@ -16,16 +17,24 @@ class MainWindow(QMainWindow):
         # Initialize the SnippetManager
         self.snippet_manager = SnippetManager()
 
-        self.central_widget = QWidget()
-        self.setCentralWidget(self.central_widget)
+        # Create tab widget as central widget
+        self.tab_widget = QTabWidget()
+        self.setCentralWidget(self.tab_widget)
 
-        # Main layout
-        self.main_layout = QVBoxLayout(self.central_widget)
+        # Create tabs
+        self.create_shortcuts_tab()
+        self.create_settings_tab()
+        self.create_about_tab()
+
+    def create_shortcuts_tab(self):
+        """Creates the Shortcuts tab with the existing functionality."""
+        shortcuts_widget = QWidget()
+        shortcuts_layout = QVBoxLayout(shortcuts_widget)
 
         # Create the table
         self.table = QTableWidget()
         self.setup_table()
-        self.main_layout.addWidget(self.table)
+        shortcuts_layout.addWidget(self.table)
 
         # Buttons layout
         button_layout = QHBoxLayout()
@@ -44,7 +53,7 @@ class MainWindow(QMainWindow):
         button_layout.addWidget(self.add_btn)
         button_layout.addWidget(self.edit_btn)
         button_layout.addWidget(self.delete_btn)
-        self.main_layout.addLayout(button_layout)
+        shortcuts_layout.addLayout(button_layout)
 
         # Load the data into the table
         self.populate_table()
@@ -53,6 +62,55 @@ class MainWindow(QMainWindow):
         self.add_btn.clicked.connect(self.add_snippet)
         self.edit_btn.clicked.connect(self.edit_snippet)
         self.delete_btn.clicked.connect(self.delete_snippet)
+
+        # Add shortcuts tab
+        self.tab_widget.addTab(shortcuts_widget, "Shortcuts")
+
+    def create_settings_tab(self):
+        """Creates the Settings tab."""
+        settings_widget = QWidget()
+        settings_layout = QVBoxLayout(settings_widget)
+        
+        settings_label = QLabel("Settings")
+        settings_label.setStyleSheet("font-size: 16px; font-weight: bold; margin: 10px;")
+        settings_layout.addWidget(settings_label)
+        
+        # Placeholder for future settings
+        placeholder_label = QLabel("Ayarlar yakında eklenecek...")
+        placeholder_label.setStyleSheet("color: gray; margin: 20px;")
+        settings_layout.addWidget(placeholder_label)
+        
+        settings_layout.addStretch()  # Push content to top
+        
+        self.tab_widget.addTab(settings_widget, "Settings")
+
+    def create_about_tab(self):
+        """Creates the About tab."""
+        about_widget = QWidget()
+        about_layout = QVBoxLayout(about_widget)
+        
+        about_label = QLabel("Clipdex Hakkında")
+        about_label.setStyleSheet("font-size: 16px; font-weight: bold; margin: 10px;")
+        about_layout.addWidget(about_label)
+        
+        about_text = QTextEdit()
+        about_text.setReadOnly(True)
+        about_text.setMaximumHeight(200)
+        about_text.setPlainText(
+            "Clipdex - Metin Genişletme Aracı\n\n"
+            "Sürüm: 1.0\n"
+            "Kısayollarınızı hızlıca genişletmenizi sağlayan bir araçtır.\n\n"
+            "Kullanım:\n"
+            "• ':' karakteri ile kısayol yazın\n"
+            "• Space veya Enter ile genişletin\n"
+            "• Backspace ile geri alın\n\n"
+            "Bu araç PyQt6 ve Python ile geliştirilmiştir."
+        )
+        about_layout.addWidget(about_text)
+        
+        about_layout.addStretch()  # Push content to top
+        
+        self.tab_widget.addTab(about_widget, "About")
 
     def setup_table(self):
         """Sets up the table."""
