@@ -1,10 +1,8 @@
 import sys
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QTableWidget, QTableWidgetItem,
-                             QPushButton, QVBoxLayout, QWidget, QHBoxLayout, QHeaderView)
-from PyQt6.QtCore import Qt
+                             QPushButton, QVBoxLayout, QWidget, QHBoxLayout, QHeaderView, QMessageBox)
 
 from clipdex_gui.dialogs import SnippetDialog
-from PyQt6.QtWidgets import QMessageBox
 
 from clipdex_core.snippet_manager import SnippetManager
 
