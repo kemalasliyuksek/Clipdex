@@ -10,7 +10,8 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Clipdex - Snippet Manager")
-        self.setGeometry(300, 300, 800, 500)
+        self.setGeometry(300, 300, 500, 600)
+        self.setFixedSize(500, 600) # Set the fixed size of the window
 
         # Initialize the SnippetManager
         self.snippet_manager = SnippetManager()
@@ -28,10 +29,18 @@ class MainWindow(QMainWindow):
 
         # Buttons layout
         button_layout = QHBoxLayout()
+        
+        # Create the buttons
         self.add_btn = QPushButton("Add")
         self.edit_btn = QPushButton("Edit")
         self.delete_btn = QPushButton("Delete")
 
+        # Set the height of the buttons
+        self.add_btn.setFixedHeight(50)
+        self.edit_btn.setFixedHeight(50)
+        self.delete_btn.setFixedHeight(50)
+
+        # Add the buttons to the layout
         button_layout.addWidget(self.add_btn)
         button_layout.addWidget(self.edit_btn)
         button_layout.addWidget(self.delete_btn)

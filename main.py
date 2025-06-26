@@ -14,7 +14,7 @@ def run_backend_listener():
     clipdex_engine = ClipdexListener()
     clipdex_engine.start()
     clipdex_engine.join() # Wait for the thread to finish
-    print("Backend listener thread'i durdu.")
+    print("Backend listener thread finished.")
 
 def main():
     """
