@@ -50,7 +50,6 @@ class MainWindow(QMainWindow):
         self.table.setColumnCount(2)
         self.table.setHorizontalHeaderLabels(["Shortcut", "Expansion"])
 
-        # QHeaderView None gelirse linter uyarısını önlemek için kontrol
         header = self.table.horizontalHeader()
         if header is not None:
             header.setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
