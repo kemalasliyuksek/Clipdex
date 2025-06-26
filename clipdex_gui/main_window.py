@@ -2,6 +2,7 @@ import sys
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QTableWidget, QTableWidgetItem,
                              QPushButton, QVBoxLayout, QWidget, QHBoxLayout, QHeaderView, QMessageBox,
                              QTabWidget, QLabel, QTextEdit)
+from PyQt6.QtGui import QFont
 
 from clipdex_gui.dialogs import SnippetDialog
 
@@ -55,6 +56,19 @@ class MainWindow(QMainWindow):
         button_layout.addWidget(self.delete_btn)
         shortcuts_layout.addLayout(button_layout)
 
+        # Test area
+        test_label = QLabel("Test Area:")
+        test_label.setStyleSheet("font-weight: bold; margin-top: 10px; font-size: 15px;")
+        shortcuts_layout.addWidget(test_label)
+        
+        self.test_textbox = QTextEdit()
+        self.test_textbox.setMaximumHeight(80)
+        font = QFont()
+        font.setPointSize(15)
+        self.test_textbox.setFont(font)
+        self.test_textbox.setPlaceholderText("You can test your shortcuts here...")
+        shortcuts_layout.addWidget(self.test_textbox)
+
         # Load the data into the table
         self.populate_table()
 
@@ -76,7 +90,7 @@ class MainWindow(QMainWindow):
         settings_layout.addWidget(settings_label)
         
         # Placeholder for future settings
-        placeholder_label = QLabel("Ayarlar yakında eklenecek...")
+        placeholder_label = QLabel("Settings will be added soon...")
         placeholder_label.setStyleSheet("color: gray; margin: 20px;")
         settings_layout.addWidget(placeholder_label)
         
@@ -89,7 +103,7 @@ class MainWindow(QMainWindow):
         about_widget = QWidget()
         about_layout = QVBoxLayout(about_widget)
         
-        about_label = QLabel("Clipdex Hakkında")
+        about_label = QLabel("About Clipdex")
         about_label.setStyleSheet("font-size: 16px; font-weight: bold; margin: 10px;")
         about_layout.addWidget(about_label)
         
@@ -97,14 +111,14 @@ class MainWindow(QMainWindow):
         about_text.setReadOnly(True)
         about_text.setMaximumHeight(200)
         about_text.setPlainText(
-            "Clipdex - Metin Genişletme Aracı\n\n"
-            "Sürüm: 1.0\n"
-            "Kısayollarınızı hızlıca genişletmenizi sağlayan bir araçtır.\n\n"
-            "Kullanım:\n"
-            "• ':' karakteri ile kısayol yazın\n"
-            "• Space veya Enter ile genişletin\n"
-            "• Backspace ile geri alın\n\n"
-            "Bu araç PyQt6 ve Python ile geliştirilmiştir."
+            "Clipdex - Text Expander\n\n"
+            "Version: 1.0\n"
+            "Text Expander is a tool that allows you to quickly expand your shortcuts.\n\n"
+            "Usage:\n"
+            "• ':' character to write a shortcut\n"
+            "• Space or Enter to expand\n"
+            "• Backspace to undo\n\n"
+            "This tool is developed with PyQt6 and Python."
         )
         about_layout.addWidget(about_text)
         
