@@ -2,6 +2,8 @@ import time
 from pynput import keyboard as pynput_keyboard
 import keyboard as system_keyboard
 from .snippet_manager import SnippetManager  # Relative import
+import os  # Dosya zaman damgası takip etmek için
+from typing import Optional
 
 class ClipdexListener:
     """
@@ -15,7 +17,10 @@ class ClipdexListener:
         self.current_shortcut = ""
         self.is_listening = False
 
-        # Prepare the pynput listener for startup
+        # Kısayol dosyasının son değişiklik zamanını takip et
+        self._snippet_file_mtime: Optional[float] = self._get_snippet_file_mtime()
+
+        # pynput dinleyicisini başlatmaya hazırla
         self.listener = pynput_keyboard.Listener(on_press=self.on_press)
 
     def start(self):
@@ -29,6 +34,9 @@ class ClipdexListener:
 
     def on_press(self, key):
         """Function triggered on every key press."""
+        # Her tuş basımında kısayol listesini güncel tut
+        self._refresh_snippets_if_needed()
+
         try:
             # ':' character starts listening
             if hasattr(key, 'char') and key.char == ':':
@@ -71,3 +79,25 @@ class ClipdexListener:
             print(f"An error occurred: {e}")
             self.is_listening = False
             self.current_shortcut = ""
+
+    # ------------------------------------------------------------------
+    # Yardımcı Metotlar
+    # ------------------------------------------------------------------
+
+    def _get_snippet_file_mtime(self) -> float:
+        """JSON dosyasının son değiştirilme zaman damgasını döndürür."""
+        if os.path.exists(self.snippet_manager.filepath):
+            return os.path.getmtime(self.snippet_manager.filepath)
+        return 0.0
+
+    def _refresh_snippets_if_needed(self):
+        """Dosya değiştiyse kısayol sözlüğünü yeniden yükler."""
+        try:
+            current_mtime = self._get_snippet_file_mtime()
+            if current_mtime != self._snippet_file_mtime:
+                self.snippets = self.snippet_manager.load_snippets()
+                self._snippet_file_mtime = current_mtime
+                print("Kısayol listesi güncellendi.")
+        except Exception as e:
+            # Dosya okunurken hata olursa motoru çökertme
+            print(f"Kısayol güncelleme hatası: {e}")
