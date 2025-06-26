@@ -17,6 +17,15 @@ class ClipdexListener:
         self.current_shortcut = ""
         self.is_listening = False
 
+        # Variables to track the current state
+        self._awaiting_backspace = False  # Waiting for the first key after expansion
+        self._last_expanded_text = ""     # The expanded text we wrote
+        self._last_shortcut = ""          # Original shortcut (':' + shortcut)
+        self._ignore_events = 0           # Count of keys to ignore
+        # Track if the user pressed space before the ':' key
+        self._prev_key_was_space = False
+        self._leading_space_flag = False  # Was there a space before the ':' key?
+
         # Track the last modified time of the snippet file
         self._snippet_file_mtime: Optional[float] = self._get_snippet_file_mtime()
 
@@ -34,6 +43,39 @@ class ClipdexListener:
 
     def on_press(self, key):
         """Function triggered on every key press."""
+        # Ignore keys pressed by the program
+        if self._ignore_events > 0:
+            self._ignore_events -= 1
+            return
+    
+        # Check if we are waiting for the first key after expansion
+        if self._awaiting_backspace:
+            # If the first key is backspace, revert the expansion
+            if key == pynput_keyboard.Key.backspace:
+                try:
+                    # The user's backspace already removed the last character.
+                    remove_count = max(len(self._last_expanded_text) - 1, 0)
+                    self._ignore_events += remove_count
+                    for _ in range(remove_count):
+                        system_keyboard.press_and_release('backspace')
+                        time.sleep(0.01)
+
+                    # 2. Write the old shortcut again (including ':')
+                    system_keyboard.write(self._last_shortcut)
+                    self._ignore_events += len(self._last_shortcut)
+
+                    # 3. Reset the listening state
+                    self.is_listening = False
+                    self.current_shortcut = ""
+                finally:
+                    # Now we are not waiting for the first key after expansion
+                    self._awaiting_backspace = False
+                return  # We have consumed this key press
+            else:
+                # The first key pressed was not backspace, so we can't revert the expansion
+                self._awaiting_backspace = False
+                # (Continue processing this key as normal)
+
         # Update the snippet list on every key press
         self._refresh_snippets_if_needed()
 
@@ -42,6 +84,8 @@ class ClipdexListener:
             if hasattr(key, 'char') and key.char == ':':
                 self.is_listening = True
                 self.current_shortcut = ""
+                # Save if there was a space before the ':' key
+                self._leading_space_flag = self._prev_key_was_space
                 # print("Listening started...")  # For debugging
                 return
 
@@ -54,6 +98,8 @@ class ClipdexListener:
                         # 1. Delete the typed shortcut
                         # The shortcut itself + the trigger ':' + the terminator ' '
                         backspace_count = len(self.current_shortcut) + 2
+                        # Ignore the backspace key events we will create
+                        self._ignore_events += backspace_count
                         for _ in range(backspace_count):
                             system_keyboard.press_and_release('backspace')
                             time.sleep(0.01)  # Prevent keypress overlaps
@@ -61,6 +107,14 @@ class ClipdexListener:
                         # 2. Write the expanded text
                         expanded_text = self.snippets[self.current_shortcut]
                         system_keyboard.write(expanded_text)
+
+                        # 3. Save information for reverting (undo)
+                        self._awaiting_backspace = True
+                        self._last_expanded_text = expanded_text
+                        self._last_shortcut = ':' + self.current_shortcut
+                        self._ignore_events += len(expanded_text)
+                        # Save if there was a space before the ':' key (for reverting)
+                        self._leading_space_for_revert = self._leading_space_flag
 
                     # Reset state
                     self.is_listening = False
@@ -79,6 +133,9 @@ class ClipdexListener:
             print(f"An error occurred: {e}")
             self.is_listening = False
             self.current_shortcut = ""
+
+        # Update the previous key was space flag for the next key
+        self._prev_key_was_space = (key == pynput_keyboard.Key.space)
 
     # ------------------------------------------------------------------
     # Helper Methods
