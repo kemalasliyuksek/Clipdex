@@ -2,62 +2,60 @@ import sys
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QTableWidget, QTableWidgetItem,
                              QPushButton, QVBoxLayout, QWidget, QHBoxLayout, QHeaderView, QMessageBox,
                              QTabWidget, QLabel, QTextEdit, QLineEdit, QStyledItemDelegate, QStyleOptionViewItem, QStyle)
-from PyQt6.QtGui import QFont
+from PyQt6.QtGui import QFont, QMouseEvent
+from PyQt6.QtCore import QEvent
+from PyQt6.QtCore import QModelIndex
 
 from clipdex_gui.dialogs import SnippetDialog
 
 from clipdex_core.snippet_manager import SnippetManager
 
-# ---------------------------------------------------------------------------
-# Hover destekli tablo sınıfları
-# ---------------------------------------------------------------------------
-
 class _HoverDelegate(QStyledItemDelegate):
-    """Satır üzerinde imleç varken tüm satırı seçim renginde boyamak için özel delegate."""
+    """Custom delegate to paint the entire row in selection color when cursor is hovering over it."""
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self._hovered_row = -1  # Geçerli hover satırı
+        self._hovered_row = -1  # Current hovered row
 
-    # Haricî erişim için setter
+
     def set_hovered_row(self, row: int):
         if self._hovered_row != row:
             self._hovered_row = row
 
-    # Boyama işlemini özelleştir
+    # Customize the painting process
     def paint(self, painter, option, index):
-        # Eğer bu hücre imleç altındaki satıra aitse, seçili gibi boya
+        # If this cell is under the cursor, paint it in selection color
         if index.row() == self._hovered_row:
             opt = QStyleOptionViewItem(option)
-            # State_Selected ekleyerek seçili satır tarzını uygula
+            # Add State_Selected to apply the selected row style
             opt.state |= QStyle.StateFlag.State_Selected
             super().paint(painter, opt, index)
         else:
             super().paint(painter, option, index)
 
 class HoverTableWidget(QTableWidget):
-    """Satır hover özelliği eklenmiş QTableWidget."""
+    """QTableWidget with row hover feature."""
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        # Mouse hareketlerini yakalayabilmek için
+        # To catch mouse movements
         self.setMouseTracking(True)
 
-        # Delegate kurulum
+        # Setup delegate
         self._delegate = _HoverDelegate(self)
         self.setItemDelegate(self._delegate)
 
-    # İmleç hareketi sırasında satırı güncelle
+    # Update the row when the cursor moves
     def mouseMoveEvent(self, event):
         hovered_row = self.rowAt(event.pos().y())
         self._delegate.set_hovered_row(hovered_row)
-        # Görünümü yenile
+        # Refresh the view
         vp = self.viewport()
         if vp is not None:
             vp.update()
         super().mouseMoveEvent(event)
 
-    # Tablo dışına çıkınca hover sıfırla
+    # Clear hover when the table is left
     def leaveEvent(self, event):
         self._delegate.set_hovered_row(-1)
         vp = self.viewport()
@@ -83,6 +81,11 @@ class MainWindow(QMainWindow):
         self.create_shortcuts_tab()
         self.create_settings_tab()
         self.create_about_tab()
+
+        # To catch any click on any widget, install a global event filter
+        app_instance = QApplication.instance()
+        if app_instance is not None:
+            app_instance.installEventFilter(self)
 
     def create_shortcuts_tab(self):
         """Creates the Shortcuts tab with the existing functionality."""
@@ -435,6 +438,43 @@ class MainWindow(QMainWindow):
                 font = item.font()
                 font.setBold(item.isSelected())
                 item.setFont(font)
+
+    def eventFilter(self, watched, event):
+        """Clear the selection when clicking on Add/Edit/Delete buttons or outside the table."""
+        if event.type() == QEvent.Type.MouseButtonPress and isinstance(event, QMouseEvent):
+            # Determine the clicked widget based on the global position
+            from PyQt6.QtWidgets import QApplication as _QApp
+            app = _QApp.instance()
+            if app is None:
+                return super().eventFilter(watched, event)
+
+            global_pos = event.globalPosition().toPoint()
+            clicked_widget = _QApp.widgetAt(global_pos)
+
+            # Protected widget list (table + buttons)
+            protected_widgets = (self.table, self.add_btn, self.edit_btn, self.delete_btn)
+
+            def is_descendant_of_any(widget, parents):
+                if widget is None:
+                    return False
+                for p in parents:
+                    if widget is p:
+                        return True
+                    if isinstance(widget, QWidget) and p.isAncestorOf(widget):
+                        return True
+                return False
+
+            # If the clicked widget is not protected, clear the selection
+            if not is_descendant_of_any(clicked_widget, protected_widgets):
+                if self.table.selectedItems():
+                    self.table.clearSelection()
+                    self.table.setCurrentIndex(QModelIndex())
+                    self.table.clearFocus()
+
+            # Let the event flow normally
+            return super().eventFilter(watched, event)
+
+        return super().eventFilter(watched, event)
 
 # Test the main execution block
 if __name__ == '__main__':
