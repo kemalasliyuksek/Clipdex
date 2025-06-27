@@ -1,7 +1,7 @@
 import sys
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QTableWidget, QTableWidgetItem,
                              QPushButton, QVBoxLayout, QWidget, QHBoxLayout, QHeaderView, QMessageBox,
-                             QTabWidget, QLabel, QTextEdit)
+                             QTabWidget, QLabel, QTextEdit, QLineEdit)
 from PyQt6.QtGui import QFont
 
 from clipdex_gui.dialogs import SnippetDialog
@@ -31,6 +31,26 @@ class MainWindow(QMainWindow):
         """Creates the Shortcuts tab with the existing functionality."""
         shortcuts_widget = QWidget()
         shortcuts_layout = QVBoxLayout(shortcuts_widget)
+
+        # Create search box
+        self.search_box = QLineEdit()
+        self.search_box.setPlaceholderText("Search shortcuts and expansions...")
+        self.search_box.setFixedHeight(35)
+        self.search_box.setStyleSheet("""
+            QLineEdit {
+                padding: 8px 12px;
+                border: 1px solid palette(mid);
+                border-radius: 6px;
+                background-color: palette(base);
+                color: palette(text);
+                font-size: 13px;
+                font-family: 'Segoe UI', Arial, sans-serif;
+            }
+            QLineEdit:focus {
+                border: 2px solid palette(highlight);
+            }
+        """)
+        shortcuts_layout.addWidget(self.search_box)
 
         # Create the table
         self.table = QTableWidget()
@@ -76,6 +96,9 @@ class MainWindow(QMainWindow):
         self.add_btn.clicked.connect(self.add_snippet)
         self.edit_btn.clicked.connect(self.edit_snippet)
         self.delete_btn.clicked.connect(self.delete_snippet)
+        
+        # Connect search box to filter function
+        self.search_box.textChanged.connect(self.filter_table)
 
         # Add shortcuts tab
         self.tab_widget.addTab(shortcuts_widget, "Shortcuts")
@@ -245,6 +268,25 @@ class MainWindow(QMainWindow):
 
         self.table.setSortingEnabled(True) # Re-enable sorting
         self.table.resizeRowsToContents()  # Auto-resize rows to fit content
+
+    def filter_table(self):
+        """Filters the table based on search text."""
+        search_text = self.search_box.text().lower()
+        
+        for row in range(self.table.rowCount()):
+            shortcut_item = self.table.item(row, 0)
+            expansion_item = self.table.item(row, 1)
+            
+            # Check if search text exists in either shortcut or expansion
+            shortcut_text = shortcut_item.text().lower() if shortcut_item else ""
+            expansion_text = expansion_item.text().lower() if expansion_item else ""
+            
+            # Show row if search text is found in either column or if search is empty
+            should_show = (search_text == "" or 
+                          search_text in shortcut_text or 
+                          search_text in expansion_text)
+            
+            self.table.setRowHidden(row, not should_show)
 
     def add_snippet(self):
         """Opens the new snippet dialog."""
