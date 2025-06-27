@@ -1,12 +1,69 @@
 import sys
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QTableWidget, QTableWidgetItem,
                              QPushButton, QVBoxLayout, QWidget, QHBoxLayout, QHeaderView, QMessageBox,
-                             QTabWidget, QLabel, QTextEdit, QLineEdit)
+                             QTabWidget, QLabel, QTextEdit, QLineEdit, QStyledItemDelegate, QStyleOptionViewItem, QStyle)
 from PyQt6.QtGui import QFont
 
 from clipdex_gui.dialogs import SnippetDialog
 
 from clipdex_core.snippet_manager import SnippetManager
+
+# ---------------------------------------------------------------------------
+# Hover destekli tablo sınıfları
+# ---------------------------------------------------------------------------
+
+class _HoverDelegate(QStyledItemDelegate):
+    """Satır üzerinde imleç varken tüm satırı seçim renginde boyamak için özel delegate."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._hovered_row = -1  # Geçerli hover satırı
+
+    # Haricî erişim için setter
+    def set_hovered_row(self, row: int):
+        if self._hovered_row != row:
+            self._hovered_row = row
+
+    # Boyama işlemini özelleştir
+    def paint(self, painter, option, index):
+        # Eğer bu hücre imleç altındaki satıra aitse, seçili gibi boya
+        if index.row() == self._hovered_row:
+            opt = QStyleOptionViewItem(option)
+            # State_Selected ekleyerek seçili satır tarzını uygula
+            opt.state |= QStyle.StateFlag.State_Selected
+            super().paint(painter, opt, index)
+        else:
+            super().paint(painter, option, index)
+
+class HoverTableWidget(QTableWidget):
+    """Satır hover özelliği eklenmiş QTableWidget."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        # Mouse hareketlerini yakalayabilmek için
+        self.setMouseTracking(True)
+
+        # Delegate kurulum
+        self._delegate = _HoverDelegate(self)
+        self.setItemDelegate(self._delegate)
+
+    # İmleç hareketi sırasında satırı güncelle
+    def mouseMoveEvent(self, event):
+        hovered_row = self.rowAt(event.pos().y())
+        self._delegate.set_hovered_row(hovered_row)
+        # Görünümü yenile
+        vp = self.viewport()
+        if vp is not None:
+            vp.update()
+        super().mouseMoveEvent(event)
+
+    # Tablo dışına çıkınca hover sıfırla
+    def leaveEvent(self, event):
+        self._delegate.set_hovered_row(-1)
+        vp = self.viewport()
+        if vp is not None:
+            vp.update()
+        super().leaveEvent(event)
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -53,7 +110,7 @@ class MainWindow(QMainWindow):
         shortcuts_layout.addWidget(self.search_box)
 
         # Create the table
-        self.table = QTableWidget()
+        self.table = HoverTableWidget()
         self.setup_table()
         shortcuts_layout.addWidget(self.table)
 
