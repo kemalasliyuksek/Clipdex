@@ -100,6 +100,9 @@ class MainWindow(QMainWindow):
         # Connect search box to filter function
         self.search_box.textChanged.connect(self.filter_table)
 
+        # Connection: update font when selection changes
+        self.table.itemSelectionChanged.connect(self.update_selected_font)
+
         # Add shortcuts tab
         self.tab_widget.addTab(shortcuts_widget, "Shortcuts")
 
@@ -178,10 +181,12 @@ class MainWindow(QMainWindow):
             QTableWidget::item:selected {
                 background-color: palette(highlight);
                 color: palette(highlighted-text);
+                font: bold 16px;
             }
             QTableWidget::item:selected:alternate {
                 background-color: palette(highlight);
                 color: palette(highlighted-text);
+                font: bold 16px;
             }
             QTableWidget::item:hover {
                 background-color: palette(midlight);
@@ -214,10 +219,12 @@ class MainWindow(QMainWindow):
             QTableWidget::item:selected:!focus {
                 background-color: palette(highlight);
                 color: palette(highlighted-text);
+                font: bold 16px;
             }
             QTableWidget::item:alternate:selected:!focus {
                 background-color: palette(highlight);  
                 color: palette(highlighted-text);
+                font-weight: bold;
             }
         """)
 
@@ -360,6 +367,17 @@ class MainWindow(QMainWindow):
                 del snippets[shortcut]
                 self.snippet_manager.save_snippets(snippets)
                 self.populate_table()
+
+    def update_selected_font(self):
+        """Update the font of the selected row to bold"""
+        for row in range(self.table.rowCount()):
+            for col in range(self.table.columnCount()):
+                item = self.table.item(row, col)
+                if item is None:
+                    continue
+                font = item.font()
+                font.setBold(item.isSelected())
+                item.setFont(font)
 
 # Test the main execution block
 if __name__ == '__main__':
