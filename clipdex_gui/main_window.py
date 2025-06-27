@@ -50,6 +50,10 @@ class MainWindow(QMainWindow):
         self.edit_btn.setFixedHeight(50)
         self.delete_btn.setFixedHeight(50)
 
+        self.add_btn.setStyleSheet("font-size: 15px; font-weight: bold;")
+        self.edit_btn.setStyleSheet("font-size: 15px; font-weight: bold;")
+        self.delete_btn.setStyleSheet("font-size: 15px; font-weight: bold;")
+
         # Add the buttons to the layout
         button_layout.addWidget(self.add_btn)
         button_layout.addWidget(self.edit_btn)
@@ -57,10 +61,6 @@ class MainWindow(QMainWindow):
         shortcuts_layout.addLayout(button_layout)
 
         # Test area
-        test_label = QLabel("Test Area:")
-        test_label.setStyleSheet("font-weight: bold; margin-top: 10px; font-size: 15px;")
-        shortcuts_layout.addWidget(test_label)
-        
         self.test_textbox = QTextEdit()
         self.test_textbox.setMaximumHeight(80)
         font = QFont()
@@ -127,17 +127,101 @@ class MainWindow(QMainWindow):
         self.tab_widget.addTab(about_widget, "About")
 
     def setup_table(self):
-        """Sets up the table."""
+        """Sets up the table with modern styling."""
         self.table.setColumnCount(2)
         self.table.setHorizontalHeaderLabels(["Shortcut", "Expansion"])
+
+        # Modern table styling with system theme support
+        self.table.setStyleSheet("""
+            QTableWidget {
+                gridline-color: palette(mid);
+                background-color: palette(base);
+                alternate-background-color: palette(alternate-base);
+                selection-background-color: palette(highlight);
+                selection-color: palette(highlighted-text);
+                border: 1px solid palette(mid);
+                border-radius: 6px;
+                font-size: 13px;
+                font-family: 'Segoe UI', Arial, sans-serif;
+                outline: none;
+            }
+            QTableWidget::item {
+                padding: 8px 12px;
+                border: none;
+                color: palette(text);
+                min-height: 20px;
+                text-align: left;
+            }
+            QTableWidget::item:selected {
+                background-color: palette(highlight);
+                color: palette(highlighted-text);
+            }
+            QTableWidget::item:selected:alternate {
+                background-color: palette(highlight);
+                color: palette(highlighted-text);
+            }
+            QTableWidget::item:hover {
+                background-color: palette(midlight);
+            }
+            QTableWidget::item:focus {
+                background-color: palette(highlight);
+                color: palette(highlighted-text);
+            }
+            QTableWidget::item:focus:alternate {
+                background-color: palette(highlight);
+                color: palette(highlighted-text);
+            }
+            QHeaderView::section {
+                background-color: palette(button);
+                color: palette(button-text);
+                padding: 8px 12px;
+                border: none;
+                border-bottom: 1px solid palette(mid);
+                font-weight: 600;
+                font-size: 12px;
+                text-align: left;
+                min-height: 25px;
+            }
+            QHeaderView::section:hover {
+                background-color: palette(midlight);
+            }
+            QTableWidget::item:alternate {
+                background-color: palette(alternate-base);
+            }
+            QTableWidget::item:selected:!focus {
+                background-color: palette(highlight);
+                color: palette(highlighted-text);
+            }
+            QTableWidget::item:alternate:selected:!focus {
+                background-color: palette(highlight);  
+                color: palette(highlighted-text);
+            }
+        """)
+
+        # Enable alternating row colors
+        self.table.setAlternatingRowColors(True)
+        
+        # Set row height for better readability
+        vertical_header = self.table.verticalHeader()
+        if vertical_header is not None:
+            vertical_header.setDefaultSectionSize(50)  # Increased height for better content visibility
+            vertical_header.setVisible(False)  # Hide row numbers
 
         header = self.table.horizontalHeader()
         if header is not None:
             header.setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
             header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+            header.setStretchLastSection(True)
 
         self.table.setColumnWidth(0, 200)  # Initial width for the shortcut column
         self.table.setSortingEnabled(True)  # Enable sorting
+        
+        # Set selection behavior
+        self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        self.table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
+        
+        # Force selection highlighting
+        self.table.setFocusPolicy(self.table.focusPolicy())
 
     def populate_table(self):
         """Reads the data from snippets.json and populates the table."""
@@ -148,11 +232,19 @@ class MainWindow(QMainWindow):
 
         row = 0
         for shortcut, expansion in snippets.items():
-            self.table.setItem(row, 0, QTableWidgetItem(shortcut))
-            self.table.setItem(row, 1, QTableWidgetItem(expansion))
+            shortcut_item = QTableWidgetItem(shortcut)
+            expansion_item = QTableWidgetItem(expansion)
+            
+            # Set text alignment for better readability
+            shortcut_item.setTextAlignment(0x0001 | 0x0080)  # Left | VCenter
+            expansion_item.setTextAlignment(0x0001 | 0x0080)  # Left | VCenter
+            
+            self.table.setItem(row, 0, shortcut_item)
+            self.table.setItem(row, 1, expansion_item)
             row += 1
 
         self.table.setSortingEnabled(True) # Re-enable sorting
+        self.table.resizeRowsToContents()  # Auto-resize rows to fit content
 
     def add_snippet(self):
         """Opens the new snippet dialog."""
