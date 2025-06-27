@@ -5,6 +5,7 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QTableWidget, QTableWidg
 from PyQt6.QtGui import QFont, QMouseEvent
 from PyQt6.QtCore import QEvent
 from PyQt6.QtCore import QModelIndex
+from PyQt6.QtCore import Qt
 
 from clipdex_gui.dialogs import SnippetDialog
 
@@ -117,6 +118,11 @@ class MainWindow(QMainWindow):
         self.setup_table()
         shortcuts_layout.addWidget(self.table)
 
+        # Label that shows total shortcut count
+        self.count_label = QLabel()
+        self.count_label.setStyleSheet("color: gray; font-size: 11px; margin: 4px;")
+        shortcuts_layout.addWidget(self.count_label)
+
         # Buttons layout
         button_layout = QHBoxLayout()
         
@@ -214,8 +220,8 @@ class MainWindow(QMainWindow):
 
     def setup_table(self):
         """Sets up the table with modern styling."""
-        self.table.setColumnCount(2)
-        self.table.setHorizontalHeaderLabels(["Shortcut", "Expansion"])
+        self.table.setColumnCount(3)
+        self.table.setHorizontalHeaderLabels(["#", "Shortcut", "Expansion"])
 
         # Modern table styling with system theme support
         self.table.setStyleSheet("""
@@ -299,11 +305,13 @@ class MainWindow(QMainWindow):
 
         header = self.table.horizontalHeader()
         if header is not None:
-            header.setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
-            header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+            header.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
+            header.setSectionResizeMode(1, QHeaderView.ResizeMode.Interactive)
+            header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
             header.setStretchLastSection(True)
 
-        self.table.setColumnWidth(0, 200)  # Initial width for the shortcut column
+        self.table.setColumnWidth(0, 50)   # Width for the numbering column
+        self.table.setColumnWidth(1, 200)  # Initial width for the shortcut column
         self.table.setSortingEnabled(True)  # Enable sorting
         
         # Set selection behavior
@@ -321,7 +329,11 @@ class MainWindow(QMainWindow):
         self.table.setRowCount(len(snippets))
 
         row = 0
-        for shortcut, expansion in snippets.items():
+        for idx, (shortcut, expansion) in enumerate(snippets.items(), start=1):
+            # Numbering column
+            number_item = QTableWidgetItem(str(idx))
+            number_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+
             shortcut_item = QTableWidgetItem(shortcut)
             expansion_item = QTableWidgetItem(expansion)
             
@@ -329,20 +341,24 @@ class MainWindow(QMainWindow):
             shortcut_item.setTextAlignment(0x0001 | 0x0080)  # Left | VCenter
             expansion_item.setTextAlignment(0x0001 | 0x0080)  # Left | VCenter
             
-            self.table.setItem(row, 0, shortcut_item)
-            self.table.setItem(row, 1, expansion_item)
+            self.table.setItem(row, 0, number_item)
+            self.table.setItem(row, 1, shortcut_item)
+            self.table.setItem(row, 2, expansion_item)
             row += 1
 
         self.table.setSortingEnabled(True) # Re-enable sorting
         self.table.resizeRowsToContents()  # Auto-resize rows to fit content
+
+        # Update shortcut count label
+        self.update_count_label()
 
     def filter_table(self):
         """Filters the table based on search text."""
         search_text = self.search_box.text().lower()
         
         for row in range(self.table.rowCount()):
-            shortcut_item = self.table.item(row, 0)
-            expansion_item = self.table.item(row, 1)
+            shortcut_item = self.table.item(row, 1)
+            expansion_item = self.table.item(row, 2)
             
             # Check if search text exists in either shortcut or expansion
             shortcut_text = shortcut_item.text().lower() if shortcut_item else ""
@@ -376,8 +392,8 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "Warning", "Please select a shortcut to edit.")
             return
 
-        item_shortcut = self.table.item(current_row, 0)
-        item_expansion = self.table.item(current_row, 1)
+        item_shortcut = self.table.item(current_row, 1)
+        item_expansion = self.table.item(current_row, 2)
 
         if item_shortcut is None or item_expansion is None:
             QMessageBox.warning(self, "Warning", "Selected row is invalid.")
@@ -409,7 +425,7 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "Warning", "Please select a shortcut to delete.")
             return
 
-        item_shortcut = self.table.item(current_row, 0)
+        item_shortcut = self.table.item(current_row, 1)
         if item_shortcut is None:
             QMessageBox.warning(self, "Warning", "Selected row is invalid.")
             return
@@ -438,6 +454,12 @@ class MainWindow(QMainWindow):
                 font = item.font()
                 font.setBold(item.isSelected())
                 item.setFont(font)
+
+    def update_count_label(self):
+        """Updates the label that shows the total number of shortcuts."""
+        if hasattr(self, "count_label"):
+            total = self.table.rowCount()
+            self.count_label.setText(f"Total shortcuts: {total}")
 
     def eventFilter(self, watched, event):
         """Clear the selection when clicking on Add/Edit/Delete buttons or outside the table."""
