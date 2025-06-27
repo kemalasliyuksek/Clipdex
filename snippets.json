@@ -1,5 +1,7 @@
 {
     "mail": "kullanici@eposta.com",
     "adres": "Bursa, Türkiye",
-    "name": "Kemal Aslıyüksek"
+    "name": "Kemal Aslıyüksek",
+    "tel": "+90 531 668 23 07",
+    "birtdate": "11.07.2003"
 }

@@ -1,12 +1,68 @@
 import sys
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QTableWidget, QTableWidgetItem,
                              QPushButton, QVBoxLayout, QWidget, QHBoxLayout, QHeaderView, QMessageBox,
-                             QTabWidget, QLabel, QTextEdit)
-from PyQt6.QtGui import QFont
+                             QTabWidget, QLabel, QTextEdit, QLineEdit, QStyledItemDelegate, QStyleOptionViewItem, QStyle)
+from PyQt6.QtGui import QFont, QMouseEvent
+from PyQt6.QtCore import QEvent
+from PyQt6.QtCore import QModelIndex
+from PyQt6.QtCore import Qt
 
 from clipdex_gui.dialogs import SnippetDialog
 
 from clipdex_core.snippet_manager import SnippetManager
+
+class _HoverDelegate(QStyledItemDelegate):
+    """Custom delegate to paint the entire row in selection color when cursor is hovering over it."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._hovered_row = -1  # Current hovered row
+
+
+    def set_hovered_row(self, row: int):
+        if self._hovered_row != row:
+            self._hovered_row = row
+
+    # Customize the painting process
+    def paint(self, painter, option, index):
+        # If this cell is under the cursor, paint it in selection color
+        if index.row() == self._hovered_row:
+            opt = QStyleOptionViewItem(option)
+            # Add State_Selected to apply the selected row style
+            opt.state |= QStyle.StateFlag.State_Selected
+            super().paint(painter, opt, index)
+        else:
+            super().paint(painter, option, index)
+
+class HoverTableWidget(QTableWidget):
+    """QTableWidget with row hover feature."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        # To catch mouse movements
+        self.setMouseTracking(True)
+
+        # Setup delegate
+        self._delegate = _HoverDelegate(self)
+        self.setItemDelegate(self._delegate)
+
+    # Update the row when the cursor moves
+    def mouseMoveEvent(self, event):
+        hovered_row = self.rowAt(event.pos().y())
+        self._delegate.set_hovered_row(hovered_row)
+        # Refresh the view
+        vp = self.viewport()
+        if vp is not None:
+            vp.update()
+        super().mouseMoveEvent(event)
+
+    # Clear hover when the table is left
+    def leaveEvent(self, event):
+        self._delegate.set_hovered_row(-1)
+        vp = self.viewport()
+        if vp is not None:
+            vp.update()
+        super().leaveEvent(event)
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -27,15 +83,45 @@ class MainWindow(QMainWindow):
         self.create_settings_tab()
         self.create_about_tab()
 
+        # To catch any click on any widget, install a global event filter
+        app_instance = QApplication.instance()
+        if app_instance is not None:
+            app_instance.installEventFilter(self)
+
     def create_shortcuts_tab(self):
         """Creates the Shortcuts tab with the existing functionality."""
         shortcuts_widget = QWidget()
         shortcuts_layout = QVBoxLayout(shortcuts_widget)
 
+        # Create search box
+        self.search_box = QLineEdit()
+        self.search_box.setPlaceholderText("Search shortcuts and expansions...")
+        self.search_box.setFixedHeight(35)
+        self.search_box.setStyleSheet("""
+            QLineEdit {
+                padding: 8px 12px;
+                border: 1px solid palette(mid);
+                border-radius: 6px;
+                background-color: palette(base);
+                color: palette(text);
+                font-size: 13px;
+                font-family: 'Segoe UI', Arial, sans-serif;
+            }
+            QLineEdit:focus {
+                border: 2px solid palette(highlight);
+            }
+        """)
+        shortcuts_layout.addWidget(self.search_box)
+
         # Create the table
-        self.table = QTableWidget()
+        self.table = HoverTableWidget()
         self.setup_table()
         shortcuts_layout.addWidget(self.table)
+
+        # Label that shows total shortcut count
+        self.count_label = QLabel()
+        self.count_label.setStyleSheet("color: gray; font-size: 11px; margin: 4px;")
+        shortcuts_layout.addWidget(self.count_label)
 
         # Buttons layout
         button_layout = QHBoxLayout()
@@ -50,6 +136,10 @@ class MainWindow(QMainWindow):
         self.edit_btn.setFixedHeight(50)
         self.delete_btn.setFixedHeight(50)
 
+        self.add_btn.setStyleSheet("font-size: 15px; font-weight: bold;")
+        self.edit_btn.setStyleSheet("font-size: 15px; font-weight: bold;")
+        self.delete_btn.setStyleSheet("font-size: 15px; font-weight: bold;")
+
         # Add the buttons to the layout
         button_layout.addWidget(self.add_btn)
         button_layout.addWidget(self.edit_btn)
@@ -57,10 +147,6 @@ class MainWindow(QMainWindow):
         shortcuts_layout.addLayout(button_layout)
 
         # Test area
-        test_label = QLabel("Test Area:")
-        test_label.setStyleSheet("font-weight: bold; margin-top: 10px; font-size: 15px;")
-        shortcuts_layout.addWidget(test_label)
-        
         self.test_textbox = QTextEdit()
         self.test_textbox.setMaximumHeight(80)
         font = QFont()
@@ -76,6 +162,12 @@ class MainWindow(QMainWindow):
         self.add_btn.clicked.connect(self.add_snippet)
         self.edit_btn.clicked.connect(self.edit_snippet)
         self.delete_btn.clicked.connect(self.delete_snippet)
+        
+        # Connect search box to filter function
+        self.search_box.textChanged.connect(self.filter_table)
+
+        # Connection: update font when selection changes
+        self.table.itemSelectionChanged.connect(self.update_selected_font)
 
         # Add shortcuts tab
         self.tab_widget.addTab(shortcuts_widget, "Shortcuts")
@@ -127,17 +219,107 @@ class MainWindow(QMainWindow):
         self.tab_widget.addTab(about_widget, "About")
 
     def setup_table(self):
-        """Sets up the table."""
-        self.table.setColumnCount(2)
-        self.table.setHorizontalHeaderLabels(["Shortcut", "Expansion"])
+        """Sets up the table with modern styling."""
+        self.table.setColumnCount(3)
+        self.table.setHorizontalHeaderLabels(["#", "Shortcut", "Expansion"])
+
+        # Modern table styling with system theme support
+        self.table.setStyleSheet("""
+            QTableWidget {
+                gridline-color: palette(mid);
+                background-color: palette(base);
+                alternate-background-color: palette(alternate-base);
+                selection-background-color: palette(highlight);
+                selection-color: palette(highlighted-text);
+                border: 1px solid palette(mid);
+                border-radius: 6px;
+                font-size: 13px;
+                font-family: 'Segoe UI', Arial, sans-serif;
+                outline: none;
+            }
+            QTableWidget::item {
+                padding: 8px 12px;
+                border: none;
+                color: palette(text);
+                min-height: 20px;
+                text-align: left;
+            }
+            QTableWidget::item:selected {
+                background-color: palette(highlight);
+                color: palette(highlighted-text);
+                font: bold 16px;
+            }
+            QTableWidget::item:selected:alternate {
+                background-color: palette(highlight);
+                color: palette(highlighted-text);
+                font: bold 16px;
+            }
+            QTableWidget::item:hover {
+                background-color: palette(midlight);
+            }
+            QTableWidget::item:focus {
+                background-color: palette(highlight);
+                color: palette(highlighted-text);
+            }
+            QTableWidget::item:focus:alternate {
+                background-color: palette(highlight);
+                color: palette(highlighted-text);
+            }
+            QHeaderView::section {
+                background-color: palette(button);
+                color: palette(button-text);
+                padding: 8px 12px;
+                border: none;
+                border-bottom: 1px solid palette(mid);
+                font-weight: 600;
+                font-size: 12px;
+                text-align: left;
+                min-height: 25px;
+            }
+            QHeaderView::section:hover {
+                background-color: palette(midlight);
+            }
+            QTableWidget::item:alternate {
+                background-color: palette(alternate-base);
+            }
+            QTableWidget::item:selected:!focus {
+                background-color: palette(highlight);
+                color: palette(highlighted-text);
+                font: bold 16px;
+            }
+            QTableWidget::item:alternate:selected:!focus {
+                background-color: palette(highlight);  
+                color: palette(highlighted-text);
+                font-weight: bold;
+            }
+        """)
+
+        # Enable alternating row colors
+        self.table.setAlternatingRowColors(True)
+        
+        # Set row height for better readability
+        vertical_header = self.table.verticalHeader()
+        if vertical_header is not None:
+            vertical_header.setDefaultSectionSize(50)  # Increased height for better content visibility
+            vertical_header.setVisible(False)  # Hide row numbers
 
         header = self.table.horizontalHeader()
         if header is not None:
-            header.setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
-            header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+            header.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
+            header.setSectionResizeMode(1, QHeaderView.ResizeMode.Interactive)
+            header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
+            header.setStretchLastSection(True)
 
-        self.table.setColumnWidth(0, 200)  # Initial width for the shortcut column
+        self.table.setColumnWidth(0, 50)   # Width for the numbering column
+        self.table.setColumnWidth(1, 200)  # Initial width for the shortcut column
         self.table.setSortingEnabled(True)  # Enable sorting
+        
+        # Set selection behavior
+        self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        self.table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
+        
+        # Force selection highlighting
+        self.table.setFocusPolicy(self.table.focusPolicy())
 
     def populate_table(self):
         """Reads the data from snippets.json and populates the table."""
@@ -147,12 +329,47 @@ class MainWindow(QMainWindow):
         self.table.setRowCount(len(snippets))
 
         row = 0
-        for shortcut, expansion in snippets.items():
-            self.table.setItem(row, 0, QTableWidgetItem(shortcut))
-            self.table.setItem(row, 1, QTableWidgetItem(expansion))
+        for idx, (shortcut, expansion) in enumerate(snippets.items(), start=1):
+            # Numbering column
+            number_item = QTableWidgetItem(str(idx))
+            number_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+
+            shortcut_item = QTableWidgetItem(shortcut)
+            expansion_item = QTableWidgetItem(expansion)
+            
+            # Set text alignment for better readability
+            shortcut_item.setTextAlignment(0x0001 | 0x0080)  # Left | VCenter
+            expansion_item.setTextAlignment(0x0001 | 0x0080)  # Left | VCenter
+            
+            self.table.setItem(row, 0, number_item)
+            self.table.setItem(row, 1, shortcut_item)
+            self.table.setItem(row, 2, expansion_item)
             row += 1
 
         self.table.setSortingEnabled(True) # Re-enable sorting
+        self.table.resizeRowsToContents()  # Auto-resize rows to fit content
+
+        # Update shortcut count label
+        self.update_count_label()
+
+    def filter_table(self):
+        """Filters the table based on search text."""
+        search_text = self.search_box.text().lower()
+        
+        for row in range(self.table.rowCount()):
+            shortcut_item = self.table.item(row, 1)
+            expansion_item = self.table.item(row, 2)
+            
+            # Check if search text exists in either shortcut or expansion
+            shortcut_text = shortcut_item.text().lower() if shortcut_item else ""
+            expansion_text = expansion_item.text().lower() if expansion_item else ""
+            
+            # Show row if search text is found in either column or if search is empty
+            should_show = (search_text == "" or 
+                          search_text in shortcut_text or 
+                          search_text in expansion_text)
+            
+            self.table.setRowHidden(row, not should_show)
 
     def add_snippet(self):
         """Opens the new snippet dialog."""
@@ -175,8 +392,8 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "Warning", "Please select a shortcut to edit.")
             return
 
-        item_shortcut = self.table.item(current_row, 0)
-        item_expansion = self.table.item(current_row, 1)
+        item_shortcut = self.table.item(current_row, 1)
+        item_expansion = self.table.item(current_row, 2)
 
         if item_shortcut is None or item_expansion is None:
             QMessageBox.warning(self, "Warning", "Selected row is invalid.")
@@ -208,7 +425,7 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "Warning", "Please select a shortcut to delete.")
             return
 
-        item_shortcut = self.table.item(current_row, 0)
+        item_shortcut = self.table.item(current_row, 1)
         if item_shortcut is None:
             QMessageBox.warning(self, "Warning", "Selected row is invalid.")
             return
@@ -226,6 +443,60 @@ class MainWindow(QMainWindow):
                 del snippets[shortcut]
                 self.snippet_manager.save_snippets(snippets)
                 self.populate_table()
+
+    def update_selected_font(self):
+        """Update the font of the selected row to bold"""
+        for row in range(self.table.rowCount()):
+            for col in range(self.table.columnCount()):
+                item = self.table.item(row, col)
+                if item is None:
+                    continue
+                font = item.font()
+                font.setBold(item.isSelected())
+                item.setFont(font)
+
+    def update_count_label(self):
+        """Updates the label that shows the total number of shortcuts."""
+        if hasattr(self, "count_label"):
+            total = self.table.rowCount()
+            self.count_label.setText(f"Total shortcuts: {total}")
+
+    def eventFilter(self, watched, event):
+        """Clear the selection when clicking on Add/Edit/Delete buttons or outside the table."""
+        if event.type() == QEvent.Type.MouseButtonPress and isinstance(event, QMouseEvent):
+            # Determine the clicked widget based on the global position
+            from PyQt6.QtWidgets import QApplication as _QApp
+            app = _QApp.instance()
+            if app is None:
+                return super().eventFilter(watched, event)
+
+            global_pos = event.globalPosition().toPoint()
+            clicked_widget = _QApp.widgetAt(global_pos)
+
+            # Protected widget list (table + buttons)
+            protected_widgets = (self.table, self.add_btn, self.edit_btn, self.delete_btn)
+
+            def is_descendant_of_any(widget, parents):
+                if widget is None:
+                    return False
+                for p in parents:
+                    if widget is p:
+                        return True
+                    if isinstance(widget, QWidget) and p.isAncestorOf(widget):
+                        return True
+                return False
+
+            # If the clicked widget is not protected, clear the selection
+            if not is_descendant_of_any(clicked_widget, protected_widgets):
+                if self.table.selectedItems():
+                    self.table.clearSelection()
+                    self.table.setCurrentIndex(QModelIndex())
+                    self.table.clearFocus()
+
+            # Let the event flow normally
+            return super().eventFilter(watched, event)
+
+        return super().eventFilter(watched, event)
 
 # Test the main execution block
 if __name__ == '__main__':
