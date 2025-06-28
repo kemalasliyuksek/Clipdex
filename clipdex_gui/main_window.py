@@ -199,31 +199,78 @@ class MainWindow(QMainWindow):
         self.tab_widget.addTab(settings_widget, "Settings")
 
     def create_about_tab(self):
-        """Creates the About tab."""
+        """Creates the About tab with a modern label-based layout (no text box)."""
         about_widget = QWidget()
         about_layout = QVBoxLayout(about_widget)
-        
-        about_label = QLabel("About Clipdex")
-        about_label.setStyleSheet("font-size: 16px; font-weight: bold; margin: 10px;")
-        about_layout.addWidget(about_label)
-        
-        about_text = QTextEdit()
-        about_text.setReadOnly(True)
-        about_text.setMaximumHeight(200)
-        about_text.setPlainText(
-            "Clipdex - Text Expander\n\n"
-            "Version: 1.0\n"
-            "Text Expander is a tool that allows you to quickly expand your shortcuts.\n\n"
-            "Usage:\n"
-            "• ':' character to write a shortcut\n"
-            "• Space or Enter to expand\n"
-            "• Backspace to undo\n\n"
-            "This tool is developed with PyQt6 and Python."
+
+        # Header
+        title_label = QLabel("Clipdex – Snippet Manager")
+        title_label.setStyleSheet("font-size: 18px; font-weight: bold; margin: 12px;")
+        about_layout.addWidget(title_label)
+
+        # Short description
+        intro_label = QLabel(
+            "Clipdex; frequently used text snippets can be written in seconds with shortcuts. It is a modern <b>text expander</b> application.")
+        intro_label.setWordWrap(True)
+        intro_label.setStyleSheet("margin: 0 14px 10px 14px; font-size: 13px;")
+        about_layout.addWidget(intro_label)
+
+        # Version information
+        version_label = QLabel("Version: 1.0.0")
+        version_label.setStyleSheet("color: gray; margin-left: 14px; font-size: 12px;")
+        about_layout.addWidget(version_label)
+
+        # Usage header
+        usage_title = QLabel("Usage")
+        usage_title.setStyleSheet("font-weight: 600; margin: 16px 14px 6px 14px; font-size: 14px;")
+        about_layout.addWidget(usage_title)
+
+        # Usage list (HTML list)
+        usage_label = QLabel(
+            "<ul style='margin-left:16px; padding:0 0 0 0;'>"
+            "<li>Write a shortcut starting with ':'</li>"
+            "<li>Press Space or Enter to expand the text</li>"
+            "<li>Use Backspace to undo the last expansion</li>"
+            "</ul>")
+        usage_label.setWordWrap(True)
+        about_layout.addWidget(usage_label)
+
+        # Technology stack information
+        tech_label = QLabel("This application is developed using <b>Python</b> &amp; <b>PyQt6</b>.")
+        tech_label.setWordWrap(True)
+        tech_label.setStyleSheet("margin: 10px 14px; font-size: 12px; color: gray;")
+        about_layout.addWidget(tech_label)
+
+        # Additional note
+        note_label = QLabel("You can contribute to the project or provide feedback on <a href='https://github.com/kemalasliyuksek/Clipdex'>GitHub</a>.")
+        note_label.setOpenExternalLinks(True)
+        note_label.setWordWrap(True)
+        note_label.setStyleSheet("margin: 4px 14px 10px 14px; font-size: 12px;")
+        about_layout.addWidget(note_label)
+
+        # Contact header
+        contact_title = QLabel("Contact")
+        contact_title.setStyleSheet("font-weight: 600; margin: 16px 14px 6px 14px; font-size: 14px;")
+        about_layout.addWidget(contact_title)
+
+        # Contact details list
+        contact_html = (
+            "<div style='margin-left:14px;'>"
+            "<p style='margin:4px 0;font-size:13px;'>👤 Kemal Aslıyüksek</p>"
+            "<p style='margin:4px 0;font-size:13px;'>🌐 <a href='https://kemalasliyuksek.com'>kemalasliyuksek.com</a></p>"
+            "<p style='margin:4px 0;font-size:13px;'>👾 <a href='https://github.com/kemalasliyuksek'>GitHub</a></p>"
+            "<p style='margin:4px 0;font-size:13px;'>💼 <a href='https://www.linkedin.com/in/kemalasliyuksek'>LinkedIn</a></p>"
+            "<p style='margin:4px 0;font-size:13px;'>✉️ <a href='mailto:kemal@kemalasliyuksek.com'>kemal@kemalasliyuksek.com</a></p>"
+            "<p style='margin:4px 0;font-size:13px;'>📍 Bursa/Turkiye</p>"
+            "</div>"
         )
-        about_layout.addWidget(about_text)
-        
+        contact_label = QLabel(contact_html)
+        contact_label.setOpenExternalLinks(True)
+        contact_label.setWordWrap(True)
+        about_layout.addWidget(contact_label)
+
         about_layout.addStretch()  # Push content to top
-        
+
         self.tab_widget.addTab(about_widget, "About")
 
     def setup_table(self):
