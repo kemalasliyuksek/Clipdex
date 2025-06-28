@@ -1,8 +1,9 @@
 import sys
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QTableWidget, QTableWidgetItem,
                              QPushButton, QVBoxLayout, QWidget, QHBoxLayout, QHeaderView, QMessageBox,
-                             QTabWidget, QLabel, QTextEdit, QLineEdit, QStyledItemDelegate, QStyleOptionViewItem, QStyle)
-from PyQt6.QtGui import QFont, QMouseEvent
+                             QTabWidget, QLabel, QTextEdit, QLineEdit, QStyledItemDelegate, QStyleOptionViewItem, QStyle,
+                             QSystemTrayIcon, QMenu)
+from PyQt6.QtGui import QFont, QMouseEvent, QAction, QIcon
 from PyQt6.QtCore import QEvent
 from PyQt6.QtCore import QModelIndex
 from PyQt6.QtCore import Qt
@@ -82,6 +83,9 @@ class MainWindow(QMainWindow):
         self.create_shortcuts_tab()
         self.create_settings_tab()
         self.create_about_tab()
+
+        # Setup system tray (goes before installing global event filter so tray is ready)
+        self._setup_tray_icon()
 
         # To catch any click on any widget, install a global event filter
         app_instance = QApplication.instance()
@@ -497,6 +501,74 @@ class MainWindow(QMainWindow):
             return super().eventFilter(watched, event)
 
         return super().eventFilter(watched, event)
+
+    # ---------------- System tray integration ----------------
+
+    def _setup_tray_icon(self):
+        """Creates the system tray icon and its context menu."""
+        # Ensure system tray is available on the platform
+        if not QSystemTrayIcon.isSystemTrayAvailable():
+            self.tray_icon = None
+            return
+
+        # Prevent the application from quitting when the main window is closed
+        QApplication.setQuitOnLastWindowClosed(False)
+
+        # Use a generic icon from the current application style as tray icon; fall back to an empty icon if style is None
+        _app_style = QApplication.style()
+        if _app_style is not None:
+            tray_icon_pixmap = _app_style.standardIcon(QStyle.StandardPixmap.SP_ComputerIcon)
+        else:
+            tray_icon_pixmap = QIcon()
+        self.tray_icon = QSystemTrayIcon(tray_icon_pixmap, self)
+        self.tray_icon.setToolTip("Clipdex")
+
+        # Context menu for the tray icon
+        tray_menu = QMenu()
+
+        action_show = QAction("Show", self)
+        action_quit = QAction("Quit", self)
+
+        action_show.triggered.connect(self._restore_from_tray)
+        action_quit.triggered.connect(QApplication.quit)
+
+        tray_menu.addAction(action_show)
+        tray_menu.addSeparator()
+        tray_menu.addAction(action_quit)
+
+        self.tray_icon.setContextMenu(tray_menu)
+
+        # React to single-clicks on the tray icon
+        self.tray_icon.activated.connect(self._on_tray_icon_activated)
+
+        self.tray_icon.show()
+
+    def _restore_from_tray(self):
+        """Restores (shows) the main window from the system tray."""
+        self.showNormal()
+        self.raise_()
+        self.activateWindow()
+
+    def _on_tray_icon_activated(self, reason):
+        """Show the window when the tray icon is clicked once."""
+        if reason == QSystemTrayIcon.ActivationReason.Trigger:
+            self._restore_from_tray()
+
+    def closeEvent(self, event):
+        """Intercept the close event to minimize the app to the system tray instead of quitting."""
+        tray = getattr(self, "tray_icon", None)
+        if tray is not None and tray.isVisible():
+            self.hide()
+            # Optional balloon message to notify the user
+            tray.showMessage(
+                "Clipdex",
+                "The application will continue to run in the background. To quit, select 'Quit' from the system tray icon.",
+                QSystemTrayIcon.MessageIcon.Information,
+                3000,
+            )
+            event.ignore()
+        else:
+            super().closeEvent(event)
 
 # Test the main execution block
 if __name__ == '__main__':
