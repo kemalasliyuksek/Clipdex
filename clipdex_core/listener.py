@@ -4,6 +4,7 @@ import keyboard as system_keyboard
 from .snippet_manager import SnippetManager
 import os
 from typing import Optional
+from .config_manager import ConfigManager
 
 class ClipdexListener:
     """
@@ -11,6 +12,7 @@ class ClipdexListener:
     """
     def __init__(self):
         self.snippet_manager = SnippetManager()
+        self.config_manager = ConfigManager()
         self.snippets = self.snippet_manager.load_snippets()
 
         # Variables to track the current state
@@ -81,7 +83,7 @@ class ClipdexListener:
 
         try:
             # ':' character starts listening
-            if hasattr(key, 'char') and key.char == ':':
+            if isinstance(key, pynput_keyboard.KeyCode) and key.char == ':':
                 self.is_listening = True
                 self.current_shortcut = ""
                 # Save if there was a space before the ':' key
@@ -91,7 +93,13 @@ class ClipdexListener:
 
             if self.is_listening:
                 # Space or Enter ends the shortcut
-                if key == pynput_keyboard.Key.space or key == pynput_keyboard.Key.enter:
+                trigger_pref = self.config_manager.get("trigger_key", "space").lower()
+                is_trigger = (
+                    (trigger_pref == "space" and key == pynput_keyboard.Key.space) or
+                    (trigger_pref == "enter" and key == pynput_keyboard.Key.enter)
+                )
+
+                if is_trigger:
                     if self.current_shortcut in self.snippets:
                         # print(f"Shortcut found: {self.current_shortcut}")  # For debugging
 
@@ -125,7 +133,7 @@ class ClipdexListener:
                     self.current_shortcut = self.current_shortcut[:-1]
 
                 # Other characters are added to the shortcut
-                elif hasattr(key, 'char') and key.char:
+                elif isinstance(key, pynput_keyboard.KeyCode) and key.char:
                     self.current_shortcut += key.char
 
         except Exception as e:
