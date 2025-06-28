@@ -319,7 +319,7 @@ class MainWindow(QMainWindow):
             header.setStretchLastSection(True)
 
         self.table.setColumnWidth(0, 50)   # Width for the numbering column
-        self.table.setColumnWidth(1, 200)  # Initial width for the shortcut column
+        self.table.setColumnWidth(1, 120)  # Shortcut column
         self.table.setSortingEnabled(True)  # Enable sorting
         
         # Set selection behavior
