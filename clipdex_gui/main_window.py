@@ -1,11 +1,14 @@
 import sys
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QTableWidget, QTableWidgetItem,
                              QPushButton, QVBoxLayout, QWidget, QHBoxLayout, QHeaderView, QMessageBox,
-                             QTabWidget, QLabel, QTextEdit, QLineEdit, QStyledItemDelegate, QStyleOptionViewItem, QStyle)
-from PyQt6.QtGui import QFont, QMouseEvent
+                             QTabWidget, QLabel, QTextEdit, QLineEdit, QStyledItemDelegate, QStyleOptionViewItem, QStyle,
+                             QSystemTrayIcon, QMenu)
+from PyQt6.QtGui import QFont, QMouseEvent, QAction, QIcon
 from PyQt6.QtCore import QEvent
 from PyQt6.QtCore import QModelIndex
 from PyQt6.QtCore import Qt
+from pathlib import Path
+from PyQt6.QtCore import QSize
 
 from clipdex_gui.dialogs import SnippetDialog
 
@@ -67,6 +70,8 @@ class HoverTableWidget(QTableWidget):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        # Apply the proper application icon before anything else
+        self._setup_app_icon()
         self.setWindowTitle("Clipdex - Snippet Manager")
         self.setGeometry(300, 300, 500, 600)
         self.setFixedSize(500, 600) # Set the fixed size of the window
@@ -82,6 +87,9 @@ class MainWindow(QMainWindow):
         self.create_shortcuts_tab()
         self.create_settings_tab()
         self.create_about_tab()
+
+        # Setup system tray (goes before installing global event filter so tray is ready)
+        self._setup_tray_icon()
 
         # To catch any click on any widget, install a global event filter
         app_instance = QApplication.instance()
@@ -497,6 +505,123 @@ class MainWindow(QMainWindow):
             return super().eventFilter(watched, event)
 
         return super().eventFilter(watched, event)
+
+    # ---------------- System tray integration ----------------
+
+    def _setup_tray_icon(self):
+        """Creates the system tray icon and its context menu."""
+        # Ensure system tray is available on the platform
+        if not QSystemTrayIcon.isSystemTrayAvailable():
+            self.tray_icon = None
+            return
+
+        # Prevent the application from quitting when the main window is closed
+        QApplication.setQuitOnLastWindowClosed(False)
+
+        # Use the dedicated tray icon for the platform; fall back to window icon if not found
+        self.tray_icon = QSystemTrayIcon(self._get_tray_icon(), self)
+        self.tray_icon.setToolTip("Clipdex")
+
+        # Context menu for the tray icon
+        tray_menu = QMenu()
+
+        action_show = QAction("Show", self)
+        action_quit = QAction("Quit", self)
+
+        action_show.triggered.connect(self._restore_from_tray)
+        action_quit.triggered.connect(QApplication.quit)
+
+        tray_menu.addAction(action_show)
+        tray_menu.addSeparator()
+        tray_menu.addAction(action_quit)
+
+        self.tray_icon.setContextMenu(tray_menu)
+
+        # React to single-clicks on the tray icon
+        self.tray_icon.activated.connect(self._on_tray_icon_activated)
+
+        self.tray_icon.show()
+
+    def _restore_from_tray(self):
+        """Restores (shows) the main window from the system tray."""
+        self.showNormal()
+        self.raise_()
+        self.activateWindow()
+
+    def _on_tray_icon_activated(self, reason):
+        """Show the window when the tray icon is clicked once."""
+        if reason == QSystemTrayIcon.ActivationReason.Trigger:
+            self._restore_from_tray()
+
+    def closeEvent(self, event):
+        """Intercept the close event to minimize the app to the system tray instead of quitting."""
+        tray = getattr(self, "tray_icon", None)
+        if tray is not None and tray.isVisible():
+            self.hide()
+            # Optional balloon message to notify the user
+            tray.showMessage(
+                "Clipdex",
+                "The application will continue to run in the background. To quit, select 'Quit' from the system tray icon.",
+                QSystemTrayIcon.MessageIcon.Information,
+                3000,
+            )
+            event.ignore()
+        else:
+            super().closeEvent(event)
+
+    # ---------------- Icon helpers ----------------
+
+    def _assets_dir(self) -> Path:
+        """Returns the absolute path of the GUI assets directory."""
+        return Path(__file__).resolve().parent / "assets"
+
+    def _setup_app_icon(self):
+        """Loads and sets the application (window) icon according to the current platform."""
+        icon = self._create_app_icon()
+        if not icon.isNull():
+            self.setWindowIcon(icon)
+
+    def _create_app_icon(self) -> QIcon:
+        """Builds a QIcon containing all available resolutions for the current platform."""
+        base_dir = self._assets_dir()
+
+        # Windows – use .ico file that already bundles multiple sizes
+        if sys.platform.startswith("win"):
+            ico_path = base_dir / "icon_package" / "app_icon.ico" if (base_dir / "icon_package" / "app_icon.ico").exists() else base_dir / "app_icon.ico"
+            return QIcon(str(ico_path))
+
+        # macOS – use .icns file (also multi-resolution)
+        if sys.platform == "darwin":
+            icns_path = base_dir / "icon_package" / "app_icon.icns" if (base_dir / "icon_package" / "app_icon.icns").exists() else base_dir / "app_icon.icns"
+            return QIcon(str(icns_path))
+
+        # Linux / other – compose icon from the provided PNGs
+        icon = QIcon()
+        pkg_dir = base_dir / "icon_package"
+        for size in [16, 24, 32, 48, 64, 128, 256, 512, 1024]:
+            png_path = pkg_dir / f"icon_{size}x{size}.png"
+            if png_path.exists():
+                icon.addFile(str(png_path), QSize(size, size))
+        # Fallback to a single PNG in assets root if multi-resolution set is missing
+        if icon.isNull():
+            fallback_png = base_dir / "app_icon.png"
+            if fallback_png.exists():
+                icon = QIcon(str(fallback_png))
+        return icon
+
+    def _get_tray_icon(self) -> QIcon:
+        """Returns an appropriate QIcon for system tray based on the platform."""
+        pkg_dir = self._assets_dir() / "icon_package"
+
+        if sys.platform.startswith("win"):
+            path = pkg_dir / "tray_16x16.png"
+        elif sys.platform == "darwin":
+            path = pkg_dir / "tray_20x20.png"
+        else:
+            # Prefer 24px for most Linux desktops; will scale automatically on HiDPI.
+            path = pkg_dir / "tray_24x24.png"
+
+        return QIcon(str(path)) if path.exists() else self.windowIcon()
 
 # Test the main execution block
 if __name__ == '__main__':
