@@ -1,222 +1,175 @@
-# Clipdex
+# Clipdex – Text Expander and Snippet Manager
 
-Clipdex is a simple text expander application developed with Python that increases your writing efficiency by replacing frequently used text snippets with shortcuts. When you type a defined shortcut, the application automatically replaces it with the long text you specified.
+Clipdex is an **open-source text expander** that turns shortcuts starting with `:` into full text while you type.  
+It ships with a modern PyQt6 interface and a background listener that works system-wide.
 
-## ✨ Features
+## Features
 
-- **System-Wide Operation:** Works in any text input field across the OS.
-    
-- **User-Friendly Interface:** Easily add, edit, and delete shortcuts through the user-friendly interface built with PyQt6.
-    
-- **Instant Updates:** Changes made to your snippet list are applied instantly without needing to restart the application.
-    
-- **Simple Trigger Mechanism:** Uses a simple trigger: start with a `:` character and end with a `Space` or `Enter`.
-    
+- `:` + *shortcut* + **Space** / **Enter** ⟶ *text expansion*  
+- Undo last expansion with a single **Backspace**  
+- Intuitive UI to add / edit / delete shortcuts  
+- Instant search and live filtering  
+- Snippets stored in a JSON file and auto-reloaded on change  
+- Minimize to system tray and keep running in background  
+- Cross-platform: Windows, macOS, Linux
 
-## 🚀 Installation
-
-Follow the steps below to run the project on your local machine.
-
-1. **Clone the Repository:**
-    
-    ```
-    git clone https://github.com/kemalasliyuksek/clipdex.git
-    cd clipdex
-    ```
-    
-2. **Install Requirements:** All the necessary libraries for the project are listed in the `requirements.txt` file.
-    
-    ```
-    pip install -r requirements.txt
-    ```
-    
-
-## 🏃‍♀️ How to Run
-
-After completing the installation, run the `main.py` file to start the application:
-
-```
-python main.py
-```
-
-When the application starts, the keyboard listener will begin running in the background, and the GUI window for managing your snippets will open.
-
-## 📝 Usage
-
-### Snippet Management
-
-- **Add:** Click the "Add" button to create a new shortcut and its corresponding expansion text.
-    
-- **Edit:** Select a snippet from the list and click the "Edit" button to update an existing entry.
-    
-- **Delete:** Select the snippet you want to remove and click the "Delete" button.
-    
-
-### Text Expansion
-
-In any text editor or input field, type the shortcut you've defined for the text you want to expand using the following format:
-
-**`:` + `your_shortcut_name` + `Space` or `Enter`**
-
-**Example:** Let's say you have defined the shortcut `"mail"` to expand to `"user@email.com"` in your `snippets.json` file.
-
-The moment you type `:mail` into any text field, it will be automatically replaced with `user@email.com`.
-
-## 📦 Project Structure
-
-```
-.
-├── clipdex_core/
-│   ├── listener.py         # The core engine that listens for keyboard events and performs text replacement.
-│   └── snippet_manager.py  # Manages reading/writing snippets from/to the snippets.json file.
-├── clipdex_gui/
-│   ├── main_window.py      # The main application window and UI elements.
-│   └── dialogs.py          # The dialog window for adding/editing new snippets.
-├── main.py                 # The entry point of the application. Starts the GUI and the background listener.
-├── requirements.txt        # Required Python libraries.
-└── snippets.json           # The JSON file where snippets and their expansions are stored.
-```
-
-## 🛠️ Technologies Used
-
-- [Python](https://www.python.org/ "null")
-    
-- [PyQt6](https://riverbankcomputing.com/software/pyqt/intro "null") - For the graphical user interface.
-    
-- [pynput](https://pynput.readthedocs.io/en/latest/ "null") - For system-wide keyboard listening.
-    
-- [keyboard](https://github.com/boppreh/keyboard "null") - For writing and deleting text.
-    
-
-## 📄 License
-
-This project is licensed under the MIT License. See the `LICENSE` file for more details.
-
-# Clipdex (Türkçe)
-
-Clipdex, sık kullandığınız metin parçacıklarını (snippet) kısayollarla değiştirerek yazma verimliliğinizi artıran, Python ile geliştirilmiş basit bir metin genişletme (text expander) uygulamasıdır. Tanımladığınız bir kısayolu yazdığınızda, uygulama bunu otomatik olarak belirlediğiniz uzun metinle değiştirir.
-
-## ✨ Özellikler
-
-- **Sistem Genelinde Çalışma:** Herhangi bir metin giriş alanında çalışır.
-    
-- **Kullanıcı Dostu Arayüz:** PyQt6 ile oluşturulmuş arayüzü sayesinde kısayolları kolayca ekleyin, düzenleyin ve silin.
-    
-- **Anlık Güncelleme:** Kısayol listenizde yaptığınız değişiklikler, uygulamayı yeniden başlatmaya gerek kalmadan anında aktif olur.
-    
-- **Basit Tetikleme Mekanizması:** `:` karakteri ile başlayan ve `Boşluk` veya `Enter` ile biten basit bir kullanım sunar.
-    
-
-## 🚀 Kurulum
-
-Projeyi yerel makinenizde çalıştırmak için aşağıdaki adımları izleyin.
-
-1. **Depoyu Klonlayın:**
-    
-    ```
-    git clone https://github.com/kemalasliyuksek/clipdex.git
-    cd clipdex
-    ```
-    
-2. **Gerekli Kütüphaneleri Yükleyin:** Projenin ihtiyaç duyduğu tüm kütüphaneler `requirements.txt` dosyasında listelenmiştir.
-    
-    ```
-    pip install -r requirements.txt
-    ```
-    
-
-## 🏃‍♀️ Nasıl Çalıştırılır?
-
-Kurulum adımlarını tamamladıktan sonra, uygulamayı başlatmak için `main.py` dosyasını çalıştırın:
-
-```
-python main.py
-```
-
-Uygulama başlatıldığında, arka planda klavye dinleyicisi çalışmaya başlayacak ve kısayol yönetimi için arayüz penceresi açılacaktır.
-
-## 📝 Kullanım
-
-### Kısayol Yönetimi
-
-- **Ekleme:** "Add" butonuna tıklayarak yeni bir kısayol ve genişletilecek metni ekleyebilirsiniz.
-    
-- **Düzenleme:** Listeden bir kısayol seçip "Edit" butonuna tıklayarak mevcut girdiyi güncelleyebilirsiniz.
-    
-- **Silme:** Düzenlemek istediğiniz kısayolu seçip "Delete" butonuna tıklayarak silebilirsiniz.
-    
-
-### Metin Genişletme
-
-Herhangi bir metin editöründe veya giriş alanında, genişletmek istediğiniz metin için tanımladığınız kısayolu aşağıdaki formatla yazın:
-
-**`:` + `kısayol_adınız` + `Boşluk` veya `Enter`**
-
-**Örnek:** `snippets.json` dosyasında `"mail"` kısayolu için `"kullanici@eposta.com"` metnini tanımladığınızı varsayalım.
-
-Metin alanına `:mail` yazdığınız anda, bu ifade otomatik olarak `kullanici@eposta.com` ile değiştirilecektir.
-
-## 📦 Proje Yapısı
-
-```
-.
-├── clipdex_core/
-│   ├── listener.py         # Klavye olaylarını dinleyen ve metin değişimini yapan ana motor.
-│   └── snippet_manager.py  # snippets.json dosyasından kısayolları okuyan/yazan yönetici.
-├── clipdex_gui/
-│   ├── main_window.py      # Ana uygulama penceresini ve arayüz elemanlarını oluşturan sınıf.
-│   └── dialogs.py          # Yeni kısayol ekleme/düzenleme diyalog penceresi.
-├── main.py                 # Uygulamanın giriş noktası. Arayüzü ve arka plan dinleyicisini başlatır.
-├── requirements.txt        # Gerekli Python kütüphaneleri.
-└── snippets.json           # Kısayol ve metinlerin saklandığı JSON dosyası.
-```
-
-## 🛠️ Kullanılan Teknolojiler
-
-- [Python](https://www.python.org/ "null")
-    
-- [PyQt6](https://riverbankcomputing.com/software/pyqt/intro "null") - Kullanıcı arayüzü için.
-    
-- [pynput](https://pynput.readthedocs.io/en/latest/ "null") - Sistem genelinde klavye dinlemesi için.
-    
-- [keyboard](https://github.com/boppreh/keyboard "null") - Metin yazma ve silme işlemleri için.
-    
-
-## 📄 Lisans
-
-	Bu proje MIT Lisansı ile lisanslanmıştır. Daha fazla bilgi için `LICENSE` dosyasına göz atın.
-
-## 🖼️ Application Icons (Windows / macOS / Linux)
-
-Clipdex artık her platformda uygun uygulama ve sistem tepsisi (tray) ikonları ile birlikte gelir. İkon dosyalarının tamamı `clipdex_gui/assets/icon_package/` dizininde saklanmaktadır ve uygulama çalışma anında işletim sistemine göre doğru dosyayı otomatik olarak yükler.
-
-| Platform | Uygulama İkonu | Tray İkonu |
-|-----------|---------------|------------|
-| Windows   | `app_icon.ico` | `tray_16x16.png` |
-| macOS     | `app_icon.icns`| `tray_20x20.png` |
-| Linux     | Çoklu-çözünürlüklü PNG seti | `tray_24x24.png` |
-
-### PyInstaller ile derleme
-
-Aşağıdaki komutları kullanarak projeyi bağımsız bir çalıştırılabilir dosyaya dönüştürebilirsiniz. İkon dosyalarının doğru aktarılabilmesi için `--add-data` parametresine dikkat edin.
+## Quick Start
 
 ```bash
-# Windows
-pyinstaller --onefile --noconsole --icon clipdex_gui/assets/icon_package/app_icon.ico \
-  --add-data "clipdex_gui/assets/icon_package;clipdex_gui/assets/icon_package" main.py
+# 1. Clone repository
+$ git clone https://github.com/kemalasliyuksek/clipdex.git
+$ cd clipdex
 
-# macOS
-pyinstaller --windowed --icon clipdex_gui/assets/icon_package/app_icon.icns \
-  --add-data "clipdex_gui/assets/icon_package:clipdex_gui/assets/icon_package" main.py
+# 2. (Optional) Create a virtual environment
+$ python -m venv venv
+$ source venv/bin/activate  # Windows: venv\Scripts\activate
 
-# Linux
-pyinstaller --onefile --windowed --icon clipdex_gui/assets/icon_package/icon_512x512.png \
-  --add-data "clipdex_gui/assets/icon_package:clipdex_gui/assets/icon_package" main.py
+# 3. Install dependencies
+(venv) $ pip install -r requirements.txt
+
+# 4. Run the application
+(venv) $ python main.py
 ```
 
-Yukarıdaki örnekler:
+> **Note:** On Linux, you may need `sudo` or udev rules for the `keyboard` package to capture keystrokes.
 
-1. Platforma uygun uygulama ikonunu belirler (`--icon`).
-2. Tüm ikon paketi klasörünü çalıştırılabilir dosyaya dahil eder (`--add-data`). Bu sayede uygulama çalışırken ihtiyaç duyulan PNG/icns/ico dosyaları bulunabilir durumda olur.
+## Usage
 
-İsteğe bağlı olarak ek PyInstaller ayarlarını (`--noconfirm`, `--clean` vb.) komutlara ekleyebilirsiniz.
+1. Click **Add** in the UI to create a new snippet.  
+   Example: `mail` → `user@example.com`  
+2. While typing anywhere, write `:mail` and press **Space** (or **Enter**) to expand.  
+3. Made a mistake? Press **Backspace** once to undo the expansion and bring back `:mail`.
+
+### System Tray
+
+When you close the window, Clipdex minimizes to the system tray and keeps running.  
+Right-click the tray icon and choose **Quit** to exit completely.
+
+## Directory Structure
+
+```text
+Clipdex/
+├─ clipdex_core/        # Background listener and snippet logic
+│  ├─ listener.py       # Captures keyboard events & expands text
+│  └─ snippet_manager.py# JSON read/write operations
+├─ clipdex_gui/         # PyQt6-based GUI
+│  ├─ main_window.py    # Main window and tabs
+│  ├─ dialogs.py        # Add/Edit dialogs
+│  └─ assets/           # App & tray icons
+├─ snippets.json        # User snippets (comes with sample data)
+├─ main.py              # Entry point that starts GUI + listener
+└─ requirements.txt     # Project dependencies
+```
+
+## Developer Guide
+
+- **Style:** Follow `black` & `flake8` conventions.  
+- **Pull Requests:** Prefix titles with `[Feature]`, `[Fix]`, or `[Refactor]`.  
+- **Tests:** Add unit tests for critical functions.
+
+### Packaging (PyInstaller)
+
+```bash
+(venv) $ pyinstaller --onefile --noconsole --icon clipdex_gui/assets/app_icon.ico main.py
+```
+
+The resulting `dist/Clipdex.exe` can be distributed directly.
+
+## Contributing
+
+All **issues** and **pull requests** are welcome!  
+For major changes, please open an issue first to discuss what you would like to change.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
+
+---
+
+# Clipdex – Metin Genişletici (Text Expander) ve Snippet Yöneticisi
+
+Clipdex; klavyenizde `:` (iki nokta) karakteri ile başlayan kısayolları, yazarken otomatik olarak tam metne dönüştüren açık kaynaklı bir **metin genişletici** (text-expander) uygulamasıdır.  
+PyQt6 ile geliştirilmiş modern bir grafik arayüzün yanı sıra, arka planda çalışan bir dinleyici (listener) sayesinde sistem genelinde kesintisiz çalışır.
+
+## Özellikler
+
+- `:` + *kısayol* + **Boşluk** / **Enter** ⟶ *metin genişler*  
+- **Backspace** ile son yapılan genişletmeyi geri alma  
+- Kısayol ekleme / düzenleme / silme işlemleri için sezgisel arayüz  
+- Anında arama ve canlı filtreleme  
+- Kısayolları JSON dosyasında saklama ve dosya değişikliklerini otomatik algılama  
+- Sistem tepsisine küçülme (tray icon) ve arka planda çalışma  
+- Çoklu platform desteği: Windows, macOS, Linux
+
+## Hızlı Başlangıç
+
+```bash
+# 1. Depoyu klonlayın
+$ git clone https://github.com/kemalasliyuksek/clipdex.git
+$ cd clipdex
+
+# 2. Sanal ortam oluşturun (önerilir)
+$ python -m venv venv
+$ source venv/bin/activate  # Windows: venv\Scripts\activate
+
+# 3. Bağımlılıkları yükleyin
+(venv) $ pip install -r requirements.txt
+
+# 4. Uygulamayı çalıştırın
+(venv) $ python main.py
+```
+
+> **Not:** Linux kullanıcılarının `keyboard` paketinin root olmadan dinleyici başlatabilmesi için `sudo` veya gerekli udev ayarlarını yapması gerekebilir.
+
+## Kullanım
+
+1. Arayüzde **Add** düğmesine tıklayarak yeni bir kısayol ekleyin.  
+   Örnek: `mail` → `kullanici@eposta.com`  
+2. Herhangi bir uygulamada yazarken `:mail` yazıp **boşluk** (veya **Enter**) tuşuna bastığınızda, metin otomatik olarak e-postaya dönüşür.  
+3. Yanlışlıkla genişlettiniz mi? Bir kez **Backspace** tuşuna basın, Clipdex genişletmeyi geri alıp sizin için `:mail` kısayolunu tekrar yazar.
+
+### Sistem Tepsisi
+
+Pencereyi kapattığınızda Clipdex, sistem tepsisine küçülür ve arka planda çalışmaya devam eder.  
+Tamamen çıkmak için tepsi simgesine sağ tıklayıp **Quit** seçeneğini kullanın.
+
+## Dizin Yapısı
+
+```text
+Clipdex/
+├─ clipdex_core/        # Arka plan dinleyici ve snippet mantığı
+│  ├─ listener.py       # Klavye olaylarını yakalama & genişletme
+│  └─ snippet_manager.py# JSON okuma / yazma işlemleri
+├─ clipdex_gui/         # PyQt6 tabanlı grafik arayüz
+│  ├─ main_window.py    # Ana pencere ve sekmeler
+│  ├─ dialogs.py        # Ekle/Düzenle diyalogları
+│  └─ assets/           # Uygulama ve tepsi ikonları
+├─ snippets.json        # Kullanıcı kısayolları (örnek verilerle gelir)
+├─ main.py              # GUI + dinleyiciyi başlatan giriş noktası
+└─ requirements.txt     # Proje bağımlılıkları
+```
+
+## Geliştirici Rehberi
+
+- **Stil:** `black` & `flake8` ile uyumlu kod yazın.  
+- **Pull Request:** Konu başlığına `[Feature]`, `[Fix]` veya `[Refactor]` etiketi ekleyin.  
+- **Test:** Kritik fonksiyonlar için birim testleri eklemeyi unutmayın.
+
+### Paketleme (PyInstaller)
+
+```bash
+(venv) $ pyinstaller --onefile --noconsole --icon clipdex_gui/assets/app_icon.ico main.py
+```
+
+Oluşan `dist/Clipdex.exe` dosyasını doğrudan dağıtabilirsiniz.
+
+## Katkıda Bulunun
+
+Her türlü **issue** ve **pull request** memnuniyetle karşılanır!  
+Büyük değişiklikler için önce konu açıp tartışmayı başlatmanız önerilir.
+
+## Lisans
+
+Bu proje [MIT Lisansı](LICENSE) ile lisanslanmıştır.
+
+---
