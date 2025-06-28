@@ -185,3 +185,38 @@ Metin alanına `:mail` yazdığınız anda, bu ifade otomatik olarak `kullanici@
 ## 📄 Lisans
 
 	Bu proje MIT Lisansı ile lisanslanmıştır. Daha fazla bilgi için `LICENSE` dosyasına göz atın.
+
+## 🖼️ Application Icons (Windows / macOS / Linux)
+
+Clipdex artık her platformda uygun uygulama ve sistem tepsisi (tray) ikonları ile birlikte gelir. İkon dosyalarının tamamı `clipdex_gui/assets/icon_package/` dizininde saklanmaktadır ve uygulama çalışma anında işletim sistemine göre doğru dosyayı otomatik olarak yükler.
+
+| Platform | Uygulama İkonu | Tray İkonu |
+|-----------|---------------|------------|
+| Windows   | `app_icon.ico` | `tray_16x16.png` |
+| macOS     | `app_icon.icns`| `tray_20x20.png` |
+| Linux     | Çoklu-çözünürlüklü PNG seti | `tray_24x24.png` |
+
+### PyInstaller ile derleme
+
+Aşağıdaki komutları kullanarak projeyi bağımsız bir çalıştırılabilir dosyaya dönüştürebilirsiniz. İkon dosyalarının doğru aktarılabilmesi için `--add-data` parametresine dikkat edin.
+
+```bash
+# Windows
+pyinstaller --onefile --noconsole --icon clipdex_gui/assets/icon_package/app_icon.ico \
+  --add-data "clipdex_gui/assets/icon_package;clipdex_gui/assets/icon_package" main.py
+
+# macOS
+pyinstaller --windowed --icon clipdex_gui/assets/icon_package/app_icon.icns \
+  --add-data "clipdex_gui/assets/icon_package:clipdex_gui/assets/icon_package" main.py
+
+# Linux
+pyinstaller --onefile --windowed --icon clipdex_gui/assets/icon_package/icon_512x512.png \
+  --add-data "clipdex_gui/assets/icon_package:clipdex_gui/assets/icon_package" main.py
+```
+
+Yukarıdaki örnekler:
+
+1. Platforma uygun uygulama ikonunu belirler (`--icon`).
+2. Tüm ikon paketi klasörünü çalıştırılabilir dosyaya dahil eder (`--add-data`). Bu sayede uygulama çalışırken ihtiyaç duyulan PNG/icns/ico dosyaları bulunabilir durumda olur.
+
+İsteğe bağlı olarak ek PyInstaller ayarlarını (`--noconfirm`, `--clean` vb.) komutlara ekleyebilirsiniz.
