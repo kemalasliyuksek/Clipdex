@@ -1,175 +1,201 @@
-# Clipdex – Text Expander and Snippet Manager
 
-Clipdex is an **open-source text expander** that turns shortcuts starting with `:` into full text while you type.  
-It ships with a modern PyQt6 interface and a background listener that works system-wide.
-
-## Features
-
-- `:` + *shortcut* + **Space** / **Enter** ⟶ *text expansion*  
-- Undo last expansion with a single **Backspace**  
-- Intuitive UI to add / edit / delete shortcuts  
-- Instant search and live filtering  
-- Snippets stored in a JSON file and auto-reloaded on change  
-- Minimize to system tray and keep running in background  
-- Cross-platform: Windows, macOS, Linux
-
-## Quick Start
-
-```bash
-# 1. Clone repository
-$ git clone https://github.com/kemalasliyuksek/clipdex.git
-$ cd clipdex
-
-# 2. (Optional) Create a virtual environment
-$ python -m venv venv
-$ source venv/bin/activate  # Windows: venv\Scripts\activate
-
-# 3. Install dependencies
-(venv) $ pip install -r requirements.txt
-
-# 4. Run the application
-(venv) $ python main.py
-```
-
-> **Note:** On Linux, you may need `sudo` or udev rules for the `keyboard` package to capture keystrokes.
-
-## Usage
-
-1. Click **Add** in the UI to create a new snippet.  
-   Example: `mail` → `user@example.com`  
-2. While typing anywhere, write `:mail` and press **Space** (or **Enter**) to expand.  
-3. Made a mistake? Press **Backspace** once to undo the expansion and bring back `:mail`.
-
-### System Tray
-
-When you close the window, Clipdex minimizes to the system tray and keeps running.  
-Right-click the tray icon and choose **Quit** to exit completely.
-
-## Directory Structure
-
-```text
-Clipdex/
-├─ clipdex_core/        # Background listener and snippet logic
-│  ├─ listener.py       # Captures keyboard events & expands text
-│  └─ snippet_manager.py# JSON read/write operations
-├─ clipdex_gui/         # PyQt6-based GUI
-│  ├─ main_window.py    # Main window and tabs
-│  ├─ dialogs.py        # Add/Edit dialogs
-│  └─ assets/           # App & tray icons
-├─ snippets.json        # User snippets (comes with sample data)
-├─ main.py              # Entry point that starts GUI + listener
-└─ requirements.txt     # Project dependencies
-```
-
-## Developer Guide
-
-- **Style:** Follow `black` & `flake8` conventions.  
-- **Pull Requests:** Prefix titles with `[Feature]`, `[Fix]`, or `[Refactor]`.  
-- **Tests:** Add unit tests for critical functions.
-
-### Packaging (PyInstaller)
-
-```bash
-(venv) $ pyinstaller --onefile --noconsole --icon clipdex_gui/assets/app_icon.ico main.py
-```
-
-The resulting `dist/Clipdex.exe` can be distributed directly.
-
-## Contributing
-
-All **issues** and **pull requests** are welcome!  
-For major changes, please open an issue first to discuss what you would like to change.
-
-## License
-
-This project is licensed under the [MIT License](LICENSE).
+<div align="center">
+  <img src="https://raw.githubusercontent.com/kemalasliyuksek/Clipdex/main/clipdex_gui/assets/icon_package/icon_256x256.png" alt="Clipdex Logo" width="150"/>
+  <br/>
+  <p>
+    <strong>Sistem genelinde çalışan, modern ve açık kaynaklı bir metin genişletici (Text Expander).</strong>
+  </p>
+  <p>
+    <em><strong>A modern, open-source, and system-wide text expander.</strong></em>
+  </p>
+  <p>
+    <a href="https://github.com/kemalasliyuksek/clipdex/blob/main/LICENSE"><img src="https://img.shields.io/github/license/kemalasliyuksek/clipdex?style=for-the-badge" alt="License"></a>
+    <a href="#"><img src="https://img.shields.io/badge/Python-3.x-blue?style=for-the-badge&logo=python" alt="Python Version"></a>
+    <a href="#"><img src="https://img.shields.io/badge/PyQt-6-orange?style=for-the-badge&logo=qt" alt="PyQt6"></a>
+    <a href="https://github.com/kemalasliyuksek/clipdex/issues"><img src="https://img.shields.io/github/issues/kemalasliyuksek/clipdex?style=for-the-badge" alt="Issues"></a>
+  </p>
+</div>
 
 ---
 
-# Clipdex – Metin Genişletici (Text Expander) ve Snippet Yöneticisi
+## 🇬🇧 English
 
-Clipdex; klavyenizde `:` (iki nokta) karakteri ile başlayan kısayolları, yazarken otomatik olarak tam metne dönüştüren açık kaynaklı bir **metin genişletici** (text-expander) uygulamasıdır.  
-PyQt6 ile geliştirilmiş modern bir grafik arayüzün yanı sıra, arka planda çalışan bir dinleyici (listener) sayesinde sistem genelinde kesintisiz çalışır.
+Clipdex is an open-source text expander that turns your custom shortcuts into full text snippets as you type, system-wide. It comes with a modern PyQt6 interface and a background listener that works seamlessly across all applications.
 
-## Özellikler
+### ✨ Features
 
-- `:` + *kısayol* + **Boşluk** / **Enter** ⟶ *metin genişler*  
-- **Backspace** ile son yapılan genişletmeyi geri alma  
-- Kısayol ekleme / düzenleme / silme işlemleri için sezgisel arayüz  
-- Anında arama ve canlı filtreleme  
-- Kısayolları JSON dosyasında saklama ve dosya değişikliklerini otomatik algılama  
-- Sistem tepsisine küçülme (tray icon) ve arka planda çalışma  
-- Çoklu platform desteği: Windows, macOS, Linux
+-   **Smart Expansion**: Type a shortcut like `:mail` and press `Space` or `Enter` to expand it into your predefined text (e.g., `your.email@example.com`).
+-   **Undo Functionality**: Made a mistake? A single `Backspace` right after an expansion will undo it and bring back your shortcut.
+-   **Modern UI**: An intuitive interface built with PyQt6 to easily add, edit, and delete your snippets.
+-   **Instant Search**: Live filtering to quickly find the shortcut you need.
+-   **System Tray Integration**: Clipdex runs quietly in the system tray. Close the window, and it will keep running in the background.
+-   **Cross-Platform**: Works on Windows, macOS, and Linux.
+-   **Import/Export**: Easily backup and restore your snippets.
 
-## Hızlı Başlangıç
+### 🚀 Quick Start
 
-```bash
-# 1. Depoyu klonlayın
-$ git clone https://github.com/kemalasliyuksek/clipdex.git
-$ cd clipdex
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/kemalasliyuksek/clipdex.git
+    cd clipdex
+    ```
 
-# 2. Sanal ortam oluşturun (önerilir)
-$ python -m venv venv
-$ source venv/bin/activate  # Windows: venv\Scripts\activate
+2.  **Create and activate a virtual environment (recommended):**
+    ```bash
+    # For Windows
+    python -m venv venv
+    venv\Scripts\activate
 
-# 3. Bağımlılıkları yükleyin
-(venv) $ pip install -r requirements.txt
+    # For macOS/Linux
+    python3 -m venv venv
+    source venv/bin/activate
+    ```
 
-# 4. Uygulamayı çalıştırın
-(venv) $ python main.py
+3.  **Install dependencies:**
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+4.  **Run the application:**
+    ```bash
+    python main.py
+    ```
+
+> **Note:** On Linux, you might need to run the application with `sudo` for the keyboard listener to work correctly.
+
+### 🛠️ How to Use
+
+1.  Launch the application and click the **Add** button to create a new snippet.
+2.  Assign a memorable shortcut (e.g., `github`) to a longer piece of text (e.g., `https://github.com/your-username`).
+3.  Go to any text field in any application, type `:github`, and press `Space` or `Enter`.
+4.  Watch the magic happen! The shortcut will be replaced by the full text.
+
+### 🏗️ Technologies Used
+
+-   **Backend**: Python
+-   **GUI**: PyQt6
+-   **Keyboard Listening**: `pynput` & `keyboard` packages
+
+### 📁 Project Structure
+
 ```
-
-> **Not:** Linux kullanıcılarının `keyboard` paketinin root olmadan dinleyici başlatabilmesi için `sudo` veya gerekli udev ayarlarını yapması gerekebilir.
-
-## Kullanım
-
-1. Arayüzde **Add** düğmesine tıklayarak yeni bir kısayol ekleyin.  
-   Örnek: `mail` → `kullanici@eposta.com`  
-2. Herhangi bir uygulamada yazarken `:mail` yazıp **boşluk** (veya **Enter**) tuşuna bastığınızda, metin otomatik olarak e-postaya dönüşür.  
-3. Yanlışlıkla genişlettiniz mi? Bir kez **Backspace** tuşuna basın, Clipdex genişletmeyi geri alıp sizin için `:mail` kısayolunu tekrar yazar.
-
-### Sistem Tepsisi
-
-Pencereyi kapattığınızda Clipdex, sistem tepsisine küçülür ve arka planda çalışmaya devam eder.  
-Tamamen çıkmak için tepsi simgesine sağ tıklayıp **Quit** seçeneğini kullanın.
-
-## Dizin Yapısı
-
-```text
 Clipdex/
-├─ clipdex_core/        # Arka plan dinleyici ve snippet mantığı
-│  ├─ listener.py       # Klavye olaylarını yakalama & genişletme
-│  └─ snippet_manager.py# JSON okuma / yazma işlemleri
-├─ clipdex_gui/         # PyQt6 tabanlı grafik arayüz
-│  ├─ main_window.py    # Ana pencere ve sekmeler
-│  ├─ dialogs.py        # Ekle/Düzenle diyalogları
-│  └─ assets/           # Uygulama ve tepsi ikonları
-├─ snippets.json        # Kullanıcı kısayolları (örnek verilerle gelir)
-├─ main.py              # GUI + dinleyiciyi başlatan giriş noktası
-└─ requirements.txt     # Proje bağımlılıkları
+├── clipdex_core/          # Core logic for the listener and snippet management
+│   ├── listener.py        # Captures keyboard events & expands text
+│   ├── snippet_manager.py # Manages reading/writing snippets to JSON
+│   └── config_manager.py  # Handles application configuration
+├── clipdex_gui/           # PyQt6 GUI files
+│   ├── main_window.py     # Main application window and tabs
+│   ├── dialogs.py         # Add/Edit snippet dialogs
+│   └── assets/            # Icons and other resources
+├── snippets.json          # Your custom snippets
+├── main.py                # Application entry point
+└── requirements.txt       # Python dependencies
 ```
 
-## Geliştirici Rehberi
+### 🤝 Contributing
 
-- **Stil:** `black` & `flake8` ile uyumlu kod yazın.  
-- **Pull Request:** Konu başlığına `[Feature]`, `[Fix]` veya `[Refactor]` etiketi ekleyin.  
-- **Test:** Kritik fonksiyonlar için birim testleri eklemeyi unutmayın.
+I'm open to any contributions! You can open an **issue** or submit a **pull request** to contribute to the project. For major changes, please open an issue first to discuss what you want to change.
 
-### Paketleme (PyInstaller)
+### 📜 License
 
-```bash
-(venv) $ pyinstaller --onefile --noconsole --icon clipdex_gui/assets/app_icon.ico main.py
-```
+This project is licensed under the [MIT License](https://github.com/kemalasliyuksek/clipdex/blob/main/LICENSE).
 
-Oluşan `dist/Clipdex.exe` dosyasını doğrudan dağıtabilirsiniz.
+### 👤 Contact
 
-## Katkıda Bulunun
-
-Her türlü **issue** ve **pull request** memnuniyetle karşılanır!  
-Büyük değişiklikler için önce konu açıp tartışmayı başlatmanız önerilir.
-
-## Lisans
-
-Bu proje [MIT Lisansı](LICENSE) ile lisanslanmıştır.
+-   **Kemal Aslıyüksek**
+-   **GitHub**: [@kemalasliyuksek](https://github.com/kemalasliyuksek)
+-   **Email**: [kemal@kemalasliyuksek.com](mailto:kemal@kemalasliyuksek.com)
+-   **Web Site**: [kemalasliyuksek.com](https://kemalasliyuksek.com)
 
 ---
+
+## 🇹🇷 Türkçe
+
+Clipdex, sık kullandığınız metinleri sizin belirlediğiniz kısayollara dönüştüren, siz yazarken sistem genelinde çalışan, açık kaynaklı bir **metin genişletici** (text-expander) uygulamasıdır. PyQt6 ile geliştirilmiş modern bir arayüze ve tüm uygulamalarda sorunsuz çalışan bir arka plan dinleyiciye sahiptir.
+
+### ✨ Özellikler
+
+-   **Akıllı Genişletme**: `:mail` gibi bir kısayol yazıp `Boşluk` veya `Enter`'a basarak bunu önceden tanımlanmış metninize (ör. `mailadresiniz@ornek.com`) dönüştürün.
+-   **Geri Alma Fonksiyonu**: Hata mı yaptınız? Genişletmeden hemen sonra tek bir `Backspace` tuşuna basmak, işlemi geri alır ve kısayolunuzu geri getirir.
+-   **Modern Arayüz**: Kısayollarınızı kolayca eklemek, düzenlemek ve silmek için PyQt6 ile oluşturulmuş sezgisel bir arayüz.
+-   **Anında Arama**: İhtiyacınız olan kısayolu hızla bulmak için canlı filtreleme.
+-   **Sistem Tepsisi Entegrasyonu**: Clipdex, sistem tepsisinde sessizce çalışır. Pencereyi kapattığınızda arka planda çalışmaya devam eder.
+-   **Çapraz Platform**: Windows, macOS ve Linux'ta çalışır.
+-   **İçe/Dışa Aktarma**: Kısayollarınızı kolayca yedekleyin ve geri yükleyin.
+
+### 🚀 Hızlı Başlangıç
+
+1.  **Depoyu klonlayın:**
+    ```bash
+    git clone https://github.com/kemalasliyuksek/clipdex.git
+    cd clipdex
+    ```
+
+2.  **Sanal ortam oluşturun ve aktif edin (önerilir):**
+    ```bash
+    # Windows için
+    python -m venv venv
+    venv\Scripts\activate
+
+    # macOS/Linux için
+    python3 -m venv venv
+    source venv/bin/activate
+    ```
+
+3.  **Bağımlılıkları yükleyin:**
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+4.  **Uygulamayı çalıştırın:**
+    ```bash
+    python main.py
+    ```
+
+> **Not:** Linux'ta, klavye dinleyicisinin doğru çalışması için uygulamayı `sudo` ile çalıştırmanız gerekebilir.
+
+### 🛠️ Nasıl Kullanılır?
+
+1.  Uygulamayı başlatın ve yeni bir kısayol oluşturmak için **Ekle** düğmesine tıklayın.
+2.  Uzun bir metin parçasına (ör. `https://github.com/kullanici-adiniz`) hatırlanabilir bir kısayol (ör. `github`) atayın.
+3.  Herhangi bir uygulamadaki herhangi bir metin alanına gidin, `:github` yazın ve `Boşluk` veya `Enter`'a basın.
+4.  Kısayolunuzun anında tam metne dönüştüğünü görün!
+
+### 🏗️ Kullanılan Teknolojiler
+
+-   **Backend**: Python
+-   **GUI**: PyQt6
+-   **Klavye Dinleme**: `pynput` & `keyboard` paketleri
+
+### 📁 Proje Yapısı
+
+```
+Clipdex/
+├── clipdex_core/          # Dinleyici ve snippet yönetimi için çekirdek mantık
+│   ├── listener.py        # Klavye olaylarını yakalar ve metni genişletir
+│   ├── snippet_manager.py # JSON'a snippet'leri okuma/yazma işlemlerini yönetir
+│   └── config_manager.py  # Uygulama yapılandırmasını yönetir
+├── clipdex_gui/           # PyQt6 GUI dosyaları
+│   ├── main_window.py     # Ana uygulama penceresi ve sekmeler
+│   ├── dialogs.py         # Kısayol ekle/düzenle iletişim kutuları
+│   └── assets/            # Simgeler ve diğer kaynaklar
+├── snippets.json          # Özel kısayollarınız
+├── main.py                # Uygulama giriş noktası
+└── requirements.txt       # Python bağımlılıkları
+```
+
+### 🤝 Katkıda Bulunma
+
+Her türlü katkıya açığım! Projeyi geliştirmek için **issue** açabilir veya **pull request** gönderebilirsiniz. Büyük değişiklikler için lütfen önce bir issue açarak neyi değiştirmek istediğinizi tartışalım.
+
+### 📜 Lisans
+
+Bu proje [MIT Lisansı](https://github.com/kemalasliyuksek/clipdex/blob/main/LICENSE) ile lisanslanmıştır.
+
+### 👤 İletişim
+
+-   **Kemal Aslıyüksek**
+-   **GitHub**: [@kemalasliyuksek](https://github.com/kemalasliyuksek)
+-   **Email**: [kemal@kemalasliyuksek.com](mailto:kemal@kemalasliyuksek.com)
+-   **Web Sitesi**: [kemalasliyuksek.com](https://kemalasliyuksek.com)
