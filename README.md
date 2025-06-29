@@ -18,6 +18,13 @@
 
 ---
 
+> ### 📢 Windows Release (v1.0.0)
+> The executable file for Windows is now available for download from the [**Releases**](https://github.com/kemalasliyuksek/clipdex/releases) section.
+> 
+> ### 📢 Windows Sürümü (v1.0.0)
+> Windows için çalıştırılabilir dosya şimdi [**Releases**](https://github.com/kemalasliyuksek/clipdex/releases) bölümünden indirilebilir.
+
+
 ## 🇬🇧 English
 
 Clipdex is an open-source text expander that turns your custom shortcuts into full text snippets as you type, system-wide. It comes with a modern PyQt6 interface and a background listener that works seamlessly across all applications.
