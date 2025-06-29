@@ -32,6 +32,8 @@ Clipdex is an open-source text expander that turns your custom shortcuts into fu
 -   **Cross-Platform**: Works on Windows, macOS, and Linux.
 -   **Import/Export**: Easily backup and restore your snippets.
 
+> **Note for Windows Users (v1.0.0):** The Windows executable for version 1.0.0 is now available. Some antivirus programs may flag the application as a potential threat (a "false positive"). This is due to the nature of system-wide keyboard listening packages (`pynput` and `keyboard`) used to expand text everywhere. Clipdex is completely safe to use. As an open-source project, you are welcome to review the entire codebase to verify its functionality.
+
 ### 🚀 Quick Start
 
 1.  **Clone the repository:**
@@ -123,6 +125,8 @@ Clipdex, sık kullandığınız metinleri sizin belirlediğiniz kısayollara dö
 -   **Sistem Tepsisi Entegrasyonu**: Clipdex, sistem tepsisinde sessizce çalışır. Pencereyi kapattığınızda arka planda çalışmaya devam eder.
 -   **Çapraz Platform**: Windows, macOS ve Linux'ta çalışır.
 -   **İçe/Dışa Aktarma**: Kısayollarınızı kolayca yedekleyin ve geri yükleyin.
+
+> **Windows Kullanıcıları için Not (v1.0.0):** Windows için 1.0.0 sürümü yayınlandı. Bazı antivirüs programları, uygulamayı potansiyel bir tehdit olarak işaretleyebilir (hatalı pozitif bildirim). Bu durum, metin genişletme özelliğinin sistem genelinde çalışabilmesi için kullanılan klavye dinleme paketlerinden (`pynput` ve `keyboard`) kaynaklanmaktadır. Clipdex'in kullanımı tamamen güvenlidir. Açık kaynaklı bir proje olduğu için, işlevselliğini doğrulamak üzere tüm kod tabanını inceleyebilirsiniz.
 
 ### 🚀 Hızlı Başlangıç
 
