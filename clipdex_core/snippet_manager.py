@@ -1,19 +1,47 @@
 import json
 import os
+from pathlib import Path
+import sys
+import shutil
+
+from .paths import get_user_data_dir
 
 class SnippetManager:
     """
     Manages shortcut data (snippets) through a JSON file.
     Reads, writes, and ensures the file exists.
     """
-    def __init__(self, filepath='snippets.json'):
-        self.filepath = filepath
+    def __init__(self, filepath: str | Path | None = None):
+        """Creates a new SnippetManager.
+
+        If *filepath* is not provided, the file path is automatically set to the user's LOCALAPPDATA folder.
+        """
+        if filepath is None:
+            filepath = get_user_data_dir() / "snippets.json"
+
+        # No need to convert Path object to string; os and open accept it.
+        self.filepath: Path | str = filepath
         self._ensure_file_exists()
 
     def _ensure_file_exists(self):
-        """Ensures that the JSON file exists. If not, it creates an empty file."""
-        if not os.path.exists(self.filepath):
-            self.save_snippets({})
+        """Ensures that the JSON file exists. If not, try to copy a bundled default; otherwise create empty."""
+        if os.path.exists(self.filepath):
+            return
+
+        # 1) Check if there's a bundled default file
+        try:
+            # Under PyInstaller, sys._MEIPASS is a temporary folder; during development, we use the module root.
+            base_path = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent.parent.parent))
+            default_path = base_path / "snippets.json"
+            if default_path.exists():
+                shutil.copy(default_path, self.filepath)
+                return
+        except Exception:
+            # If copying fails, continue silently
+            pass
+
+        # 2) If no default file exists, create an empty file
+        self.save_snippets({})
 
     def load_snippets(self):
         """Loads shortcuts from the JSON file and returns them as a dictionary."""

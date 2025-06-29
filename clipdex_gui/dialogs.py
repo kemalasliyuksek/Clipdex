@@ -19,10 +19,53 @@ class SnippetDialog(QDialog):
 
         self.main_layout.addLayout(form_layout)
 
+        # QLineEdit style and size
+        self.shortcut_input.setFixedHeight(35)
+        self.shortcut_input.setStyleSheet(
+            """
+            QLineEdit {
+                padding: 8px 12px;
+                border: 1px solid palette(mid);
+                border-radius: 6px;
+                background-color: palette(base);
+                color: palette(text);
+                font-size: 13px;
+                font-family: 'Segoe UI', Arial, sans-serif;
+            }
+            QLineEdit:focus {
+                border: 2px solid palette(highlight);
+            }
+            """
+        )
+
+        # QTextEdit style and size
+        self.expansion_input.setFixedHeight(150)
+        self.expansion_input.setStyleSheet(
+            """
+            QTextEdit {
+                padding: 8px 12px;
+                border: 1px solid palette(mid);
+                border-radius: 6px;
+                background-color: palette(base);
+                color: palette(text);
+                font-size: 13px;
+                font-family: 'Segoe UI', Arial, sans-serif;
+            }
+            QTextEdit:focus {
+                border: 2px solid palette(highlight);
+            }
+            """
+        )
+
         # Standard OK and Cancel buttons
         self.button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.reject)
+
+        # Style and size of the buttons (OK/Cancel)
+        for btn in self.button_box.buttons():
+            btn.setFixedHeight(40)
+            btn.setStyleSheet("font-size: 14px; font-weight: bold;")
 
         self.main_layout.addWidget(self.button_box)
 

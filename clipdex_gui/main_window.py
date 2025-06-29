@@ -2,7 +2,7 @@ import sys
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QTableWidget, QTableWidgetItem,
                              QPushButton, QVBoxLayout, QWidget, QHBoxLayout, QHeaderView, QMessageBox,
                              QTabWidget, QLabel, QTextEdit, QLineEdit, QStyledItemDelegate, QStyleOptionViewItem, QStyle,
-                             QSystemTrayIcon, QMenu)
+                             QSystemTrayIcon, QMenu, QCheckBox, QComboBox, QFileDialog)
 from PyQt6.QtGui import QFont, QMouseEvent, QAction, QIcon
 from PyQt6.QtCore import QEvent
 from PyQt6.QtCore import QModelIndex
@@ -13,6 +13,7 @@ from PyQt6.QtCore import QSize
 from clipdex_gui.dialogs import SnippetDialog
 
 from clipdex_core.snippet_manager import SnippetManager
+from clipdex_core.config_manager import ConfigManager
 
 class _HoverDelegate(QStyledItemDelegate):
     """Custom delegate to paint the entire row in selection color when cursor is hovering over it."""
@@ -78,6 +79,7 @@ class MainWindow(QMainWindow):
 
         # Initialize the SnippetManager
         self.snippet_manager = SnippetManager()
+        self.config_manager = ConfigManager()
 
         # Create tab widget as central widget
         self.tab_widget = QTabWidget()
@@ -184,46 +186,124 @@ class MainWindow(QMainWindow):
         """Creates the Settings tab."""
         settings_widget = QWidget()
         settings_layout = QVBoxLayout(settings_widget)
-        
-        settings_label = QLabel("Settings")
-        settings_label.setStyleSheet("font-size: 16px; font-weight: bold; margin: 10px;")
-        settings_layout.addWidget(settings_label)
-        
-        # Placeholder for future settings
-        placeholder_label = QLabel("Settings will be added soon...")
-        placeholder_label.setStyleSheet("color: gray; margin: 20px;")
-        settings_layout.addWidget(placeholder_label)
-        
-        settings_layout.addStretch()  # Push content to top
-        
+
+        # ----------------- 1. Automatic start -----------------
+        auto_start_checkbox = QCheckBox("Run Clipdex when Windows starts")
+        settings_layout.addWidget(auto_start_checkbox)
+
+        # ----------------- 2. Trigger key -----------------
+        trigger_layout = QHBoxLayout()
+        trigger_label = QLabel("Trigger key:")
+        trigger_combo = QComboBox()
+        trigger_combo.addItems(["Space", "Enter"])
+        trigger_layout.addWidget(trigger_label)
+        trigger_layout.addWidget(trigger_combo)
+        trigger_layout.addStretch()
+        settings_layout.addLayout(trigger_layout)
+
+        # ----------------- 6. Backup / Restore -------------
+        backup_layout = QHBoxLayout()
+        export_btn = QPushButton("Export Snippets…")
+        import_btn = QPushButton("Import Snippets…")
+        export_btn.clicked.connect(self._export_snippets)
+        import_btn.clicked.connect(self._import_snippets)
+        backup_layout.addWidget(export_btn)
+        backup_layout.addWidget(import_btn)
+        settings_layout.addLayout(backup_layout)
+
+        # ----------------- Action buttons ----------------- 
+        action_layout = QHBoxLayout()
+        save_btn = QPushButton("Save")
+        cancel_btn = QPushButton("Cancel")
+        save_btn.clicked.connect(self._save_settings)
+        cancel_btn.clicked.connect(self._cancel_settings)
+        action_layout.addStretch()
+        action_layout.addWidget(cancel_btn)
+        action_layout.addWidget(save_btn)
+        settings_layout.addLayout(action_layout)
+
         self.tab_widget.addTab(settings_widget, "Settings")
 
+        # Save references
+        self._auto_start_checkbox = auto_start_checkbox
+        self._trigger_combo = trigger_combo
+
+        # Initialise UI with current config values
+        self._reload_settings_ui()
+
     def create_about_tab(self):
-        """Creates the About tab."""
+        """Creates the About tab with a modern label-based layout (no text box)."""
         about_widget = QWidget()
         about_layout = QVBoxLayout(about_widget)
-        
-        about_label = QLabel("About Clipdex")
-        about_label.setStyleSheet("font-size: 16px; font-weight: bold; margin: 10px;")
-        about_layout.addWidget(about_label)
-        
-        about_text = QTextEdit()
-        about_text.setReadOnly(True)
-        about_text.setMaximumHeight(200)
-        about_text.setPlainText(
-            "Clipdex - Text Expander\n\n"
-            "Version: 1.0\n"
-            "Text Expander is a tool that allows you to quickly expand your shortcuts.\n\n"
-            "Usage:\n"
-            "• ':' character to write a shortcut\n"
-            "• Space or Enter to expand\n"
-            "• Backspace to undo\n\n"
-            "This tool is developed with PyQt6 and Python."
+
+        # Header
+        title_label = QLabel("Clipdex – Snippet Manager")
+        title_label.setStyleSheet("font-size: 18px; font-weight: bold; margin: 12px;")
+        about_layout.addWidget(title_label)
+
+        # Short description
+        intro_label = QLabel(
+            "Clipdex; frequently used text snippets can be written in seconds with shortcuts. It is a modern <b>text expander</b> application.")
+        intro_label.setWordWrap(True)
+        intro_label.setStyleSheet("margin: 0 14px 10px 14px; font-size: 13px;")
+        about_layout.addWidget(intro_label)
+
+        # Version information
+        version_label = QLabel("Version: 1.0.0")
+        version_label.setStyleSheet("color: gray; margin-left: 14px; font-size: 12px;")
+        about_layout.addWidget(version_label)
+
+        # Usage header
+        usage_title = QLabel("Usage")
+        usage_title.setStyleSheet("font-weight: 600; margin: 16px 14px 6px 14px; font-size: 14px;")
+        about_layout.addWidget(usage_title)
+
+        # Usage list (HTML list)
+        usage_label = QLabel(
+            "<ul style='margin-left:16px; padding:0 0 0 0;'>"
+            "<li>Write a shortcut starting with ':'</li>"
+            "<li>Press Space or Enter to expand the text</li>"
+            "<li>Use Backspace to undo the last expansion</li>"
+            "</ul>")
+        usage_label.setWordWrap(True)
+        about_layout.addWidget(usage_label)
+
+        # Technology stack information
+        tech_label = QLabel("This application is developed using <b>Python</b> &amp; <b>PyQt6</b>.")
+        tech_label.setWordWrap(True)
+        tech_label.setStyleSheet("margin: 10px 14px; font-size: 12px; color: gray;")
+        about_layout.addWidget(tech_label)
+
+        # Additional note
+        note_label = QLabel("You can contribute to the project or provide feedback on <a href='https://github.com/kemalasliyuksek/Clipdex'>GitHub</a>.")
+        note_label.setOpenExternalLinks(True)
+        note_label.setWordWrap(True)
+        note_label.setStyleSheet("margin: 4px 14px 10px 14px; font-size: 12px;")
+        about_layout.addWidget(note_label)
+
+        # Contact header
+        contact_title = QLabel("Contact")
+        contact_title.setStyleSheet("font-weight: 600; margin: 16px 14px 6px 14px; font-size: 14px;")
+        about_layout.addWidget(contact_title)
+
+        # Contact details list
+        contact_html = (
+            "<div style='margin-left:14px;'>"
+            "<p style='margin:4px 0;font-size:13px;'>👤 Kemal Aslıyüksek</p>"
+            "<p style='margin:4px 0;font-size:13px;'>🌐 <a href='https://kemalasliyuksek.com'>kemalasliyuksek.com</a></p>"
+            "<p style='margin:4px 0;font-size:13px;'>👾 <a href='https://github.com/kemalasliyuksek'>GitHub</a></p>"
+            "<p style='margin:4px 0;font-size:13px;'>💼 <a href='https://www.linkedin.com/in/kemalasliyuksek'>LinkedIn</a></p>"
+            "<p style='margin:4px 0;font-size:13px;'>✉️ <a href='mailto:kemal@kemalasliyuksek.com'>kemal@kemalasliyuksek.com</a></p>"
+            "<p style='margin:4px 0;font-size:13px;'>📍 Bursa/Turkiye</p>"
+            "</div>"
         )
-        about_layout.addWidget(about_text)
-        
+        contact_label = QLabel(contact_html)
+        contact_label.setOpenExternalLinks(True)
+        contact_label.setWordWrap(True)
+        about_layout.addWidget(contact_label)
+
         about_layout.addStretch()  # Push content to top
-        
+
         self.tab_widget.addTab(about_widget, "About")
 
     def setup_table(self):
@@ -319,7 +399,7 @@ class MainWindow(QMainWindow):
             header.setStretchLastSection(True)
 
         self.table.setColumnWidth(0, 50)   # Width for the numbering column
-        self.table.setColumnWidth(1, 200)  # Initial width for the shortcut column
+        self.table.setColumnWidth(1, 120)  # Shortcut column
         self.table.setSortingEnabled(True)  # Enable sorting
         
         # Set selection behavior
@@ -622,6 +702,151 @@ class MainWindow(QMainWindow):
             path = pkg_dir / "tray_24x24.png"
 
         return QIcon(str(path)) if path.exists() else self.windowIcon()
+
+    # ---------------- Settings helpers ----------------
+
+    # Common registry path constant (HKCU)
+    _RUN_REG_PATH = r"Software\Microsoft\Windows\CurrentVersion\Run"
+
+    def _is_auto_start_enabled(self) -> bool:
+        """Checks if the app is registered under HKCU\...\Run."""
+        if not sys.platform.startswith("win"):
+            return False
+        try:
+            import winreg  # type: ignore
+            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, self._RUN_REG_PATH, 0, winreg.KEY_READ) as key:
+                try:
+                    winreg.QueryValueEx(key, "Clipdex")
+                    return True
+                except FileNotFoundError:
+                    return False
+        except FileNotFoundError:
+            return False
+        except Exception:
+            return False
+
+    def _toggle_auto_start(self, state):
+        """Enables or disables auto-start based on the checkbox state."""
+        enabled = state == Qt.CheckState.Checked.value
+        self.config_manager.set("auto_start", enabled)
+
+        if not sys.platform.startswith("win"):
+            # Only support on Windows for now
+            QMessageBox.information(self, "Info", "This feature is currently only supported on Windows.")
+            return
+
+        try:
+            import winreg  # type: ignore
+
+            # Create (or open) the Run key with write access
+            with winreg.CreateKey(winreg.HKEY_CURRENT_USER, self._RUN_REG_PATH) as key:
+                if enabled:
+                    exe_path = sys.argv[0]
+                    winreg.SetValueEx(key, "Clipdex", 0, winreg.REG_SZ, exe_path)
+                else:
+                    try:
+                        winreg.DeleteValue(key, "Clipdex")
+                    except FileNotFoundError:
+                        pass
+        except Exception as e:
+            # Kullanıcıya bilgi ver, ancak uygulamayı durdurma
+            QMessageBox.warning(self, "Error", f"Auto-start registry update failed:\n{e}")
+
+    def _change_trigger_key(self, value: str):
+        """Updates trigger key preference in config."""
+        self.config_manager.set("trigger_key", value.lower())
+        QMessageBox.information(self, "Info", "Trigger key saved.")
+
+    def _export_snippets(self):
+        """Exports snippets to a user-selected JSON file."""
+        dest, _ = QFileDialog.getSaveFileName(self, "Export Snippets", "snippets_backup.json", "JSON Files (*.json)")
+        if dest:
+            try:
+                data = self.snippet_manager.load_snippets()
+                with open(dest, "w", encoding="utf-8") as f:
+                    import json
+                    json.dump(data, f, indent=4, ensure_ascii=False)
+                QMessageBox.information(self, "Success", "Snippets exported successfully.")
+            except Exception as e:
+                QMessageBox.warning(self, "Error", f"An error occurred while exporting:\n{e}")
+
+    def _import_snippets(self):
+        """Imports snippets from a JSON file chosen by the user."""
+        src, _ = QFileDialog.getOpenFileName(self, "Import Snippets", "", "JSON Files (*.json)")
+        if src:
+            try:
+                import json
+                with open(src, "r", encoding="utf-8") as f:
+                    snippets = json.load(f)
+                if not isinstance(snippets, dict):
+                    raise ValueError("Invalid file format")
+                # Merge with existing snippets (overwrite duplicates)
+                current = self.snippet_manager.load_snippets()
+                current.update(snippets)
+                self.snippet_manager.save_snippets(current)
+                self.populate_table()
+                QMessageBox.information(self, "Success", "Snippets imported successfully.")
+            except Exception as e:
+                QMessageBox.warning(self, "Error", f"An error occurred while importing:\n{e}")
+
+    # ---------------- Settings save / cancel ----------------
+
+    def _reload_settings_ui(self):
+        """Syncs the Settings controls with current config values."""
+        # 1) Auto-start: Read from config
+        enabled_cfg = bool(self.config_manager.get("auto_start", False))
+        self._auto_start_checkbox.setChecked(enabled_cfg)
+
+        # 2) Sync with registry (only on Windows)
+        if sys.platform.startswith("win"):
+            reg_enabled = self._is_auto_start_enabled()
+            if reg_enabled != enabled_cfg:
+                # Fix silently – config is always the single source of truth
+                self._update_auto_start_registry(enabled_cfg)
+
+        # 3) Trigger key
+        current_trigger = self.config_manager.get("trigger_key", "space").lower()
+        self._trigger_combo.setCurrentIndex(0 if current_trigger == "space" else 1)
+
+    def _save_settings(self):
+        """Applies changes only when user presses Save."""
+        # Auto-start
+        enabled_auto = self._auto_start_checkbox.isChecked()
+        self.config_manager.set("auto_start", enabled_auto)
+        self._update_auto_start_registry(enabled_auto)
+
+        # Trigger key
+        trig = "space" if self._trigger_combo.currentIndex() == 0 else "enter"
+        self.config_manager.set("trigger_key", trig)
+
+        QMessageBox.information(self, "Settings", "Changes saved successfully.")
+
+    def _cancel_settings(self):
+        """Revert UI changes and keep previous config."""
+        self._reload_settings_ui()
+
+    # ---------------- Helper to update registry ----------------
+
+    def _update_auto_start_registry(self, enabled: bool):
+        """Handles registry manipulation for auto-start (Windows)."""
+        if not sys.platform.startswith("win"):
+            return
+        try:
+            import winreg  # type: ignore
+
+            # Create (or open) the Run key with write access
+            with winreg.CreateKey(winreg.HKEY_CURRENT_USER, self._RUN_REG_PATH) as key:
+                if enabled:
+                    exe_path = sys.argv[0]
+                    winreg.SetValueEx(key, "Clipdex", 0, winreg.REG_SZ, exe_path)
+                else:
+                    try:
+                        winreg.DeleteValue(key, "Clipdex")
+                    except FileNotFoundError:
+                        pass
+        except Exception as e:
+            # Kullanıcıya bilgi ver, ancak uygulamayı durdurma
+            QMessageBox.warning(self, "Error", f"Auto-start registry update failed:\n{e}")
 
 # Test the main execution block
 if __name__ == '__main__':
