@@ -1,6 +1,9 @@
 import json
 import os
+from pathlib import Path
 from typing import Any, Dict
+
+from .paths import get_user_data_dir
 
 class ConfigManager:
     """Simple JSON-file based configuration manager."""
@@ -10,8 +13,10 @@ class ConfigManager:
         "auto_start": False,
     }
 
-    def __init__(self, filepath: str = "config.json") -> None:
-        self.filepath = filepath
+    def __init__(self, filepath: str | Path | None = None) -> None:
+        if filepath is None:
+            filepath = get_user_data_dir() / "config.json"
+        self.filepath: Path | str = filepath
         self._ensure_file()
 
     # ---------------------------------------------------------------------

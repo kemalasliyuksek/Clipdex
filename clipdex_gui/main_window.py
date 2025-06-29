@@ -705,20 +705,23 @@ class MainWindow(QMainWindow):
 
     # ---------------- Settings helpers ----------------
 
+    # Common registry path constant (HKCU)
+    _RUN_REG_PATH = r"Software\Microsoft\Windows\CurrentVersion\Run"
+
     def _is_auto_start_enabled(self) -> bool:
-        """Checks if the app is set to run at Windows startup (HKCU/.../Run)."""
+        """Checks if the app is registered under HKCU\...\Run."""
         if not sys.platform.startswith("win"):
             return False
         try:
             import winreg  # type: ignore
-            key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software/Microsoft/Windows/CurrentVersion/Run", 0, winreg.KEY_READ)
-            try:
-                winreg.QueryValueEx(key, "Clipdex")
-                return True
-            except FileNotFoundError:
-                return False
-            finally:
-                key.Close()
+            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, self._RUN_REG_PATH, 0, winreg.KEY_READ) as key:
+                try:
+                    winreg.QueryValueEx(key, "Clipdex")
+                    return True
+                except FileNotFoundError:
+                    return False
+        except FileNotFoundError:
+            return False
         except Exception:
             return False
 
@@ -734,8 +737,9 @@ class MainWindow(QMainWindow):
 
         try:
             import winreg  # type: ignore
-            reg_path = r"Software/Microsoft/Windows/CurrentVersion/Run"
-            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, reg_path, 0, winreg.KEY_SET_VALUE) as key:
+
+            # Create (or open) the Run key with write access
+            with winreg.CreateKey(winreg.HKEY_CURRENT_USER, self._RUN_REG_PATH) as key:
                 if enabled:
                     exe_path = sys.argv[0]
                     winreg.SetValueEx(key, "Clipdex", 0, winreg.REG_SZ, exe_path)
@@ -745,9 +749,8 @@ class MainWindow(QMainWindow):
                     except FileNotFoundError:
                         pass
         except Exception as e:
-            QMessageBox.warning(self, "Error", f"An error occurred while updating the auto-start setting:\n{e}")
-            # Revert checkbox
-            self._auto_start_checkbox.setChecked(not enabled)
+            # Kullanıcıya bilgi ver, ancak uygulamayı durdurma
+            QMessageBox.warning(self, "Error", f"Auto-start registry update failed:\n{e}")
 
     def _change_trigger_key(self, value: str):
         """Updates trigger key preference in config."""
@@ -790,7 +793,18 @@ class MainWindow(QMainWindow):
 
     def _reload_settings_ui(self):
         """Syncs the Settings controls with current config values."""
-        self._auto_start_checkbox.setChecked(self._is_auto_start_enabled())
+        # 1) Auto-start: Read from config
+        enabled_cfg = bool(self.config_manager.get("auto_start", False))
+        self._auto_start_checkbox.setChecked(enabled_cfg)
+
+        # 2) Sync with registry (only on Windows)
+        if sys.platform.startswith("win"):
+            reg_enabled = self._is_auto_start_enabled()
+            if reg_enabled != enabled_cfg:
+                # Fix silently – config is always the single source of truth
+                self._update_auto_start_registry(enabled_cfg)
+
+        # 3) Trigger key
         current_trigger = self.config_manager.get("trigger_key", "space").lower()
         self._trigger_combo.setCurrentIndex(0 if current_trigger == "space" else 1)
 
@@ -819,8 +833,9 @@ class MainWindow(QMainWindow):
             return
         try:
             import winreg  # type: ignore
-            reg_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
-            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, reg_path, 0, winreg.KEY_SET_VALUE) as key:
+
+            # Create (or open) the Run key with write access
+            with winreg.CreateKey(winreg.HKEY_CURRENT_USER, self._RUN_REG_PATH) as key:
                 if enabled:
                     exe_path = sys.argv[0]
                     winreg.SetValueEx(key, "Clipdex", 0, winreg.REG_SZ, exe_path)
@@ -830,6 +845,7 @@ class MainWindow(QMainWindow):
                     except FileNotFoundError:
                         pass
         except Exception as e:
+            # Kullanıcıya bilgi ver, ancak uygulamayı durdurma
             QMessageBox.warning(self, "Error", f"Auto-start registry update failed:\n{e}")
 
 # Test the main execution block
