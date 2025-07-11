@@ -1,107 +1,51 @@
-# Clipdex - MacOS Kurulum ve Kullanım
+# Clipdex - MacOS Kurulum Rehberi
 
-## Kurulum
+## MacOS'ta Kısayol Sorunları ve Çözümleri
 
-### 1. Python Bağımlılıklarını Yükleyin
+MacOS'ta Clipdex'in kısayollarını kullanabilmek için sistem izinlerini ayarlamanız gerekmektedir.
 
-```bash
-pip3 install -r requirements.txt
-```
+### 1. Accessibility İzinlerini Ayarlama
 
-### 2. Accessibility İzni Verin
+1. **System Preferences**'ı açın
+2. **Security & Privacy** sekmesine gidin
+3. **Privacy** sekmesini seçin
+4. Sol panelden **Accessibility**'yi seçin
+5. Kilit simgesine tıklayın ve şifrenizi girin
+6. **+** butonuna tıklayın
+7. **Clipdex** uygulamasını bulun ve ekleyin
+8. Clipdex'in yanındaki kutucuğu işaretleyin
 
-Clipdex'in klavye kısayollarını çalıştırabilmesi için Accessibility izni vermeniz gerekiyor:
+### 2. Uygulamayı Yeniden Başlatma
 
-1. **System Preferences** > **Security & Privacy** > **Privacy** sekmesine gidin
-2. Sol panelden **Accessibility**'yi seçin
-3. **Lock** simgesine tıklayın ve şifrenizi girin
-4. **+** butonuna tıklayın ve Clipdex uygulamasını ekleyin
-5. Clipdex'i seçin ve **Allow** butonuna tıklayın
+İzinleri verdikten sonra:
+1. Clipdex uygulamasını tamamen kapatın
+2. `main.py` dosyasını tekrar çalıştırın
+3. Terminal çıktısında "✓ MacOS klavye izinleri kontrol edildi - Tamam" mesajını görmelisiniz
 
-### 3. Uygulamayı Çalıştırın
+### 3. Test Etme
 
-```bash
-python3 main.py
-```
+İzinler doğru ayarlandıktan sonra:
+1. Herhangi bir metin editöründe `:test` yazın
+2. Space tuşuna basın
+3. Eğer snippets.json dosyanızda "test" kısayolu varsa, genişletilmiş metni görmelisiniz
 
-## Kullanım
+### 4. Sorun Giderme
 
-### Temel Kullanım
+#### Kısayollar çalışmıyor mu?
+- Terminal çıktısını kontrol edin
+- "⚠️ MacOS izin sorunu tespit edildi!" mesajı varsa izinleri tekrar kontrol edin
+- System Preferences > Security & Privacy > Privacy > Accessibility'de Clipdex'in işaretli olduğundan emin olun
 
-1. **Kısayol Oluşturma**: Herhangi bir metin editöründe `:` karakteri ile başlayan bir kısayol yazın
-2. **Genişletme**: Space veya Enter tuşuna basarak metni genişletin
-3. **Geri Alma**: Genişletme sonrası Backspace tuşuna basarak işlemi geri alabilirsiniz
+#### Uygulama çöküyor mu?
+- Terminal'de hata mesajlarını kontrol edin
+- Gerekirse uygulamayı yeniden başlatın
 
-### Örnek Kullanım
+### 5. Güvenlik Notu
 
-```
-:merhaba [Space] → Merhaba dünya!
-:email [Space] → kemal@kemalasliyuksek.com
-```
+Clipdex, klavye olaylarını dinlemek için sistem genelinde çalışır. Bu, güvenlik açısından normal bir durumdur ve sadece metin genişletme işlevi için kullanılır.
 
-### Ayarlar
+### 6. Ek Bilgiler
 
-- **Auto-start**: Uygulamanın sistem başlangıcında otomatik çalışmasını sağlar
-- **Trigger Key**: Space veya Enter tuşunu tetikleyici olarak seçebilirsiniz
-
-## MacOS Özellikleri
-
-### Menü Bar Entegrasyonu
-
-- Uygulama kapatıldığında menü barında ikon olarak kalır
-- Menü bar ikonuna tıklayarak uygulamayı tekrar açabilirsiniz
-- "Quit" seçeneği ile uygulamayı tamamen kapatabilirsiniz
-
-### LaunchAgent Desteği
-
-- Auto-start özelliği MacOS LaunchAgent sistemi kullanır
-- `~/Library/LaunchAgents/com.clipdex.plist` dosyası oluşturulur
-
-### Veri Konumu
-
-- Snippets: `~/Library/Application Support/Clipdex/snippets.json`
-- Config: `~/Library/Application Support/Clipdex/config.json`
-
-## Sorun Giderme
-
-### Accessibility İzni Sorunu
-
-Eğer "This process is not trusted!" hatası alıyorsanız:
-
-1. System Preferences > Security & Privacy > Privacy > Accessibility
-2. Clipdex'i listeden kaldırın
-3. Uygulamayı yeniden başlatın
-4. İzin isteğini kabul edin
-
-### Klavye Kısayolları Çalışmıyor
-
-1. Accessibility izninin verildiğinden emin olun
-2. Uygulamayı yeniden başlatın
-3. Test için basit bir kısayol deneyin: `:test [Space]`
-
-### Menü Bar İkonu Görünmüyor
-
-1. Uygulamayı kapatın (X butonuna tıklayın)
-2. Menü barında ikon görünmelidir
-3. İkon görünmüyorsa uygulamayı yeniden başlatın
-
-## Teknik Detaylar
-
-### Platform Spesifik Özellikler
-
-- **Auto-start**: LaunchAgent plist dosyası kullanır
-- **System Tray**: MacOS menü bar entegrasyonu
-- **File Paths**: `~/Library/Application Support/Clipdex/` dizini
-- **Icons**: `.icns` formatında ikonlar kullanır
-
-### Güvenlik
-
-- Accessibility izni sadece klavye dinleme için kullanılır
-- Kişisel veriler yerel olarak saklanır
-- Ağ bağlantısı gerektirmez
-
-## Destek
-
-Sorunlarınız için:
-- GitHub Issues: https://github.com/kemalasliyuksek/Clipdex
-- Email: kemal@kemalasliyuksek.com 
+- MacOS Catalina ve üzeri sürümlerde ek güvenlik önlemleri olabilir
+- İlk çalıştırmada sistem uyarısı alabilirsiniz - "Allow" seçeneğini seçin
+- Uygulama güncellemelerinden sonra izinleri tekrar kontrol etmeniz gerekebilir 

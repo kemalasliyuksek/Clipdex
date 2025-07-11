@@ -3,6 +3,7 @@ from pynput import keyboard as pynput_keyboard
 import keyboard as system_keyboard
 from .snippet_manager import SnippetManager
 import os
+import sys
 from typing import Optional
 from .config_manager import ConfigManager
 
@@ -14,6 +15,10 @@ class ClipdexListener:
         self.snippet_manager = SnippetManager()
         self.config_manager = ConfigManager()
         self.snippets = self.snippet_manager.load_snippets()
+
+        # Check for MacOS permissions
+        if sys.platform == "darwin":
+            self._check_macos_permissions()
 
         # Variables to track the current state
         self.current_shortcut = ""
@@ -34,10 +39,33 @@ class ClipdexListener:
         # Prepare the pynput listener
         self.listener = pynput_keyboard.Listener(on_press=self.on_press)
 
+    def _check_macos_permissions(self):
+        """Check if the app has necessary permissions on MacOS."""
+        try:
+            # Try to start a test listener to check permissions
+            test_listener = pynput_keyboard.Listener(on_press=lambda x: None)
+            test_listener.start()
+            test_listener.stop()
+            print("✓ macOS keyboard permissions checked - OK")
+        except Exception as e:
+            print("⚠️  macOS permission issue detected!")
+            print("Follow these steps to allow Clipdex to work:")
+            print("1. System Preferences > Security & Privacy > Privacy > Accessibility")
+            print("2. Click the '+' button and add the Clipdex application")
+            print("3. Check the box next to Clipdex")
+            print("4. Restart the application")
+            print(f"Error details: {e}")
+
     def start(self):
         """Starts the listener."""
         print("Clipdex engine running...")
-        self.listener.start()
+        try:
+            self.listener.start()
+            print("✓ Keyboard listener started")
+        except Exception as e:
+            print(f"❌ Keyboard listener could not be started: {e}")
+            if sys.platform == "darwin":
+                print("Check Accessibility permissions on macOS!")
 
     def join(self):
         """Waits for the listener thread to finish."""
