@@ -487,6 +487,23 @@ class MainWindow(QMainWindow):
                 return
 
             snippets = self.snippet_manager.load_snippets()
+            
+            # Check if shortcut already exists
+            if data["shortcut"] in snippets:
+                existing_expansion = snippets[data["shortcut"]]
+                reply = QMessageBox.question(
+                    self, 
+                    "Duplicate Shortcut", 
+                    f"The shortcut '{data['shortcut']}' already exists.\n\n"
+                    f"Current expansion: {existing_expansion}\n\n"
+                    f"Are you sure you want to replace it?",
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                    QMessageBox.StandardButton.No
+                )
+                
+                if reply == QMessageBox.StandardButton.No:
+                    return
+            
             snippets[data["shortcut"]] = data["expansion"]
             self.snippet_manager.save_snippets(snippets)
             self.populate_table()  # Refresh the table
