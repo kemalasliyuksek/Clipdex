@@ -32,6 +32,7 @@ Clipdex is an open-source text expander that turns your custom shortcuts into fu
 ### ✨ Features
 
 -   **Smart Expansion**: Type a shortcut like `:mail` and press `Space` or `Enter` to expand it into your predefined text (e.g., `your.email@example.com`).
+-   **Customizable Trigger Character**: Change the default `:` trigger character to any character you prefer (e.g., `!`, `@`, `#`, etc.) in the settings.
 -   **Undo Functionality**: Made a mistake? A single `Backspace` right after an expansion will undo it and bring back your shortcut.
 -   **Modern UI**: An intuitive interface built with PyQt6 to easily add, edit, and delete your snippets.
 -   **Instant Search**: Live filtering to quickly find the shortcut you need.
@@ -128,6 +129,7 @@ Clipdex, sık kullandığınız metinleri sizin belirlediğiniz kısayollara dö
 ### ✨ Özellikler
 
 -   **Akıllı Genişletme**: `:mail` gibi bir kısayol yazıp `Boşluk` veya `Enter`'a basarak bunu önceden tanımlanmış metninize (ör. `mailadresiniz@ornek.com`) dönüştürün.
+-   **Özelleştirilebilir Tetikleyici Karakteri**: Varsayılan `:` tetikleyici karakterini ayarlardan istediğiniz herhangi bir karakterle değiştirin (ör. `!`, `@`, `#`, vb.).
 -   **Geri Alma Fonksiyonu**: Hata mı yaptınız? Genişletmeden hemen sonra tek bir `Backspace` tuşuna basmak, işlemi geri alır ve kısayolunuzu geri getirir.
 -   **Modern Arayüz**: Kısayollarınızı kolayca eklemek, düzenlemek ve silmek için PyQt6 ile oluşturulmuş sezgisel bir arayüz.
 -   **Anında Arama**: İhtiyacınız olan kısayolu hızla bulmak için canlı filtreleme.
