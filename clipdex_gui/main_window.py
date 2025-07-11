@@ -188,7 +188,14 @@ class MainWindow(QMainWindow):
         settings_layout = QVBoxLayout(settings_widget)
 
         # ----------------- 1. Automatic start -----------------
-        auto_start_checkbox = QCheckBox("Run Clipdex when Windows starts")
+        if sys.platform.startswith("win"):
+            auto_start_text = "Run Clipdex when Windows starts"
+        elif sys.platform == "darwin":
+            auto_start_text = "Run Clipdex when macOS starts"
+        else:
+            auto_start_text = "Run Clipdex when system starts"
+        
+        auto_start_checkbox = QCheckBox(auto_start_text)
         settings_layout.addWidget(auto_start_checkbox)
 
         # ----------------- 2. Trigger key -----------------
@@ -590,6 +597,11 @@ class MainWindow(QMainWindow):
 
     def _setup_tray_icon(self):
         """Creates the system tray icon and its context menu."""
+        # On macOS, use menu bar instead of system tray
+        if sys.platform == "darwin":
+            self._setup_macos_menu_bar()
+            return
+            
         # Ensure system tray is available on the platform
         if not QSystemTrayIcon.isSystemTrayAvailable():
             self.tray_icon = None
@@ -634,14 +646,19 @@ class MainWindow(QMainWindow):
             self._restore_from_tray()
 
     def closeEvent(self, event):
-        """Intercept the close event to minimize the app to the system tray instead of quitting."""
+        """Intercept the close event to minimize the app to the system tray/menu bar instead of quitting."""
         tray = getattr(self, "tray_icon", None)
         if tray is not None and tray.isVisible():
             self.hide()
             # Optional balloon message to notify the user
+            if sys.platform == "darwin":
+                message = "The application will continue to run in the background. To quit, select 'Quit' from the menu bar icon."
+            else:
+                message = "The application will continue to run in the background. To quit, select 'Quit' from the system tray icon."
+            
             tray.showMessage(
                 "Clipdex",
-                "The application will continue to run in the background. To quit, select 'Quit' from the system tray icon.",
+                message,
                 QSystemTrayIcon.MessageIcon.Information,
                 3000,
             )
@@ -709,48 +726,55 @@ class MainWindow(QMainWindow):
     _RUN_REG_PATH = r"Software\Microsoft\Windows\CurrentVersion\Run"
 
     def _is_auto_start_enabled(self) -> bool:
-        """Checks if the app is registered under HKCU\...\Run."""
-        if not sys.platform.startswith("win"):
-            return False
-        try:
-            import winreg  # type: ignore
-            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, self._RUN_REG_PATH, 0, winreg.KEY_READ) as key:
-                try:
-                    winreg.QueryValueEx(key, "Clipdex")
-                    return True
-                except FileNotFoundError:
-                    return False
-        except FileNotFoundError:
-            return False
-        except Exception:
-            return False
+        """Checks if the app is registered for auto-start based on platform."""
+        if sys.platform.startswith("win"):
+            try:
+                import winreg  # type: ignore
+                with winreg.OpenKey(winreg.HKEY_CURRENT_USER, self._RUN_REG_PATH, 0, winreg.KEY_READ) as key:
+                    try:
+                        winreg.QueryValueEx(key, "Clipdex")
+                        return True
+                    except FileNotFoundError:
+                        return False
+            except FileNotFoundError:
+                return False
+            except Exception:
+                return False
+        elif sys.platform == "darwin":
+            # Check if LaunchAgent plist exists
+            launch_agent_path = Path.home() / "Library" / "LaunchAgents" / "com.clipdex.plist"
+            return launch_agent_path.exists()
+        else:
+            # Linux - check for desktop entry
+            desktop_entry_path = Path.home() / ".config" / "autostart" / "clipdex.desktop"
+            return desktop_entry_path.exists()
 
     def _toggle_auto_start(self, state):
         """Enables or disables auto-start based on the checkbox state."""
         enabled = state == Qt.CheckState.Checked.value
         self.config_manager.set("auto_start", enabled)
 
-        if not sys.platform.startswith("win"):
-            # Only support on Windows for now
-            QMessageBox.information(self, "Info", "This feature is currently only supported on Windows.")
-            return
+        if sys.platform.startswith("win"):
+            try:
+                import winreg  # type: ignore
 
-        try:
-            import winreg  # type: ignore
-
-            # Create (or open) the Run key with write access
-            with winreg.CreateKey(winreg.HKEY_CURRENT_USER, self._RUN_REG_PATH) as key:
-                if enabled:
-                    exe_path = sys.argv[0]
-                    winreg.SetValueEx(key, "Clipdex", 0, winreg.REG_SZ, exe_path)
-                else:
-                    try:
-                        winreg.DeleteValue(key, "Clipdex")
-                    except FileNotFoundError:
-                        pass
-        except Exception as e:
-            # Kullanıcıya bilgi ver, ancak uygulamayı durdurma
-            QMessageBox.warning(self, "Error", f"Auto-start registry update failed:\n{e}")
+                # Create (or open) the Run key with write access
+                with winreg.CreateKey(winreg.HKEY_CURRENT_USER, self._RUN_REG_PATH) as key:
+                    if enabled:
+                        exe_path = sys.argv[0]
+                        winreg.SetValueEx(key, "Clipdex", 0, winreg.REG_SZ, exe_path)
+                    else:
+                        try:
+                            winreg.DeleteValue(key, "Clipdex")
+                        except FileNotFoundError:
+                            pass
+            except Exception as e:
+                QMessageBox.warning(self, "Error", f"Auto-start registry update failed:\n{e}")
+        elif sys.platform == "darwin":
+            self._update_macos_auto_start(enabled)
+        else:
+            # Linux - create desktop entry
+            self._update_linux_auto_start(enabled)
 
     def _change_trigger_key(self, value: str):
         """Updates trigger key preference in config."""
@@ -797,12 +821,21 @@ class MainWindow(QMainWindow):
         enabled_cfg = bool(self.config_manager.get("auto_start", False))
         self._auto_start_checkbox.setChecked(enabled_cfg)
 
-        # 2) Sync with registry (only on Windows)
+        # 2) Sync with platform-specific auto-start (all platforms)
         if sys.platform.startswith("win"):
             reg_enabled = self._is_auto_start_enabled()
             if reg_enabled != enabled_cfg:
                 # Fix silently – config is always the single source of truth
                 self._update_auto_start_registry(enabled_cfg)
+        elif sys.platform == "darwin":
+            macos_enabled = self._is_auto_start_enabled()
+            if macos_enabled != enabled_cfg:
+                self._update_macos_auto_start(enabled_cfg)
+        else:
+            # Linux
+            linux_enabled = self._is_auto_start_enabled()
+            if linux_enabled != enabled_cfg:
+                self._update_linux_auto_start(enabled_cfg)
 
         # 3) Trigger key
         current_trigger = self.config_manager.get("trigger_key", "space").lower()
@@ -813,7 +846,14 @@ class MainWindow(QMainWindow):
         # Auto-start
         enabled_auto = self._auto_start_checkbox.isChecked()
         self.config_manager.set("auto_start", enabled_auto)
-        self._update_auto_start_registry(enabled_auto)
+        
+        # Update platform-specific auto-start
+        if sys.platform.startswith("win"):
+            self._update_auto_start_registry(enabled_auto)
+        elif sys.platform == "darwin":
+            self._update_macos_auto_start(enabled_auto)
+        else:
+            self._update_linux_auto_start(enabled_auto)
 
         # Trigger key
         trig = "space" if self._trigger_combo.currentIndex() == 0 else "enter"
@@ -845,8 +885,115 @@ class MainWindow(QMainWindow):
                     except FileNotFoundError:
                         pass
         except Exception as e:
-            # Kullanıcıya bilgi ver, ancak uygulamayı durdurma
             QMessageBox.warning(self, "Error", f"Auto-start registry update failed:\n{e}")
+
+    def _update_macos_auto_start(self, enabled: bool):
+        """Handles LaunchAgent creation for auto-start (macOS)."""
+        try:
+            launch_agents_dir = Path.home() / "Library" / "LaunchAgents"
+            launch_agents_dir.mkdir(parents=True, exist_ok=True)
+            
+            plist_path = launch_agents_dir / "com.clipdex.plist"
+            
+            if enabled:
+                # Get the executable path
+                exe_path = sys.argv[0]
+                if exe_path.endswith('.py'):
+                    # If running as script, use python to run it
+                    exe_path = f"{sys.executable} {exe_path}"
+                
+                # Create LaunchAgent plist content
+                plist_content = f'''<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.clipdex</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>{sys.executable}</string>
+        <string>{sys.argv[0]}</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <false/>
+</dict>
+</plist>'''
+                
+                with open(plist_path, 'w') as f:
+                    f.write(plist_content)
+            else:
+                # Remove the plist file if it exists
+                if plist_path.exists():
+                    plist_path.unlink()
+                    
+        except Exception as e:
+            QMessageBox.warning(self, "Error", f"macOS auto-start update failed:\n{e}")
+
+    def _update_linux_auto_start(self, enabled: bool):
+        """Handles desktop entry creation for auto-start (Linux)."""
+        try:
+            autostart_dir = Path.home() / ".config" / "autostart"
+            autostart_dir.mkdir(parents=True, exist_ok=True)
+            
+            desktop_entry_path = autostart_dir / "clipdex.desktop"
+            
+            if enabled:
+                # Get the executable path
+                exe_path = sys.argv[0]
+                if exe_path.endswith('.py'):
+                    # If running as script, use python to run it
+                    exe_path = f"{sys.executable} {exe_path}"
+                
+                # Create desktop entry content
+                desktop_content = f"""[Desktop Entry]
+Type=Application
+Name=Clipdex
+Comment=Text snippet manager
+Exec={exe_path}
+Terminal=false
+X-GNOME-Autostart-enabled=true
+"""
+                
+                with open(desktop_entry_path, 'w') as f:
+                    f.write(desktop_content)
+            else:
+                # Remove the desktop entry if it exists
+                if desktop_entry_path.exists():
+                    desktop_entry_path.unlink()
+                    
+        except Exception as e:
+            QMessageBox.warning(self, "Error", f"Linux auto-start update failed:\n{e}")
+
+    def _setup_macos_menu_bar(self):
+        """Creates a menu bar icon for macOS (since system tray is not available)."""
+        # Prevent the application from quitting when the main window is closed
+        QApplication.setQuitOnLastWindowClosed(False)
+        
+        # Create a menu bar icon using QSystemTrayIcon but with menu bar behavior
+        self.tray_icon = QSystemTrayIcon(self._get_tray_icon(), self)
+        self.tray_icon.setToolTip("Clipdex")
+        
+        # Context menu for the menu bar icon
+        tray_menu = QMenu()
+        
+        action_show = QAction("Show Clipdex", self)
+        action_quit = QAction("Quit", self)
+        
+        action_show.triggered.connect(self._restore_from_tray)
+        action_quit.triggered.connect(QApplication.quit)
+        
+        tray_menu.addAction(action_show)
+        tray_menu.addSeparator()
+        tray_menu.addAction(action_quit)
+        
+        self.tray_icon.setContextMenu(tray_menu)
+        
+        # React to single-clicks on the menu bar icon
+        self.tray_icon.activated.connect(self._on_tray_icon_activated)
+        
+        self.tray_icon.show()
 
 # Test the main execution block
 if __name__ == '__main__':
