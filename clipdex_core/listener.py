@@ -84,13 +84,14 @@ class ClipdexListener:
             if key == pynput_keyboard.Key.backspace:
                 try:
                     # The user's backspace already removed the last character.
-                    remove_count = max(len(self._last_expanded_text) - 1, 0)
+                    # We need to remove the remaining expanded text
+                    remove_count = len(self._last_expanded_text)
                     self._ignore_events += remove_count
                     for _ in range(remove_count):
                         system_keyboard.press_and_release('backspace')
                         time.sleep(0.01)
 
-                    # 2. Write the old shortcut again (including ':')
+                    # 2. Write the old shortcut again (including shortcut character)
                     system_keyboard.write(self._last_shortcut)
                     self._ignore_events += len(self._last_shortcut)
 
@@ -110,11 +111,13 @@ class ClipdexListener:
         self._refresh_snippets_if_needed()
 
         try:
-            # ':' character starts listening
-            if isinstance(key, pynput_keyboard.KeyCode) and key.char == ':':
+            # Get shortcut character from config
+            shortcut_char = self.config_manager.get("shortcut_character", ":")
+            # Shortcut character starts listening
+            if isinstance(key, pynput_keyboard.KeyCode) and key.char == shortcut_char:
                 self.is_listening = True
                 self.current_shortcut = ""
-                # Save if there was a space before the ':' key
+                # Save if there was a space before the shortcut character
                 self._leading_space_flag = self._prev_key_was_space
                 # print("Listening started...")  # For debugging
                 return
@@ -132,7 +135,8 @@ class ClipdexListener:
                         # print(f"Shortcut found: {self.current_shortcut}")  # For debugging
 
                         # 1. Delete the typed shortcut
-                        # The shortcut itself + the trigger ':' + the terminator ' '
+                        # The shortcut itself + the trigger character + the terminator ' '
+                        shortcut_char = self.config_manager.get("shortcut_character", ":")
                         backspace_count = len(self.current_shortcut) + 2
                         # Ignore the backspace key events we will create
                         self._ignore_events += backspace_count
@@ -147,7 +151,8 @@ class ClipdexListener:
                         # 3. Save information for reverting (undo)
                         self._awaiting_backspace = True
                         self._last_expanded_text = expanded_text
-                        self._last_shortcut = ':' + self.current_shortcut
+                        shortcut_char = self.config_manager.get("shortcut_character", ":")
+                        self._last_shortcut = shortcut_char + self.current_shortcut
                         self._ignore_events += len(expanded_text)
                         # Save if there was a space before the ':' key (for reverting)
                         self._leading_space_for_revert = self._leading_space_flag
