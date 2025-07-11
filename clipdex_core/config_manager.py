@@ -11,6 +11,7 @@ class ConfigManager:
     DEFAULT_CONFIG: Dict[str, Any] = {
         "trigger_key": "space",  # "space" or "enter"
         "auto_start": False,
+        "shortcut_character": ":",  # Character to start shortcuts
     }
 
     def __init__(self, filepath: Union[str, Path, None] = None) -> None:

@@ -208,6 +208,16 @@ class MainWindow(QMainWindow):
         trigger_layout.addStretch()
         settings_layout.addLayout(trigger_layout)
 
+        # ----------------- 3. Shortcut character -----------------
+        shortcut_char_layout = QHBoxLayout()
+        shortcut_char_label = QLabel("Shortcut character:")
+        shortcut_char_combo = QComboBox()
+        shortcut_char_combo.addItems([":", "/", "*", "!", "@", "#", "$", "%", "&", "?"])
+        shortcut_char_layout.addWidget(shortcut_char_label)
+        shortcut_char_layout.addWidget(shortcut_char_combo)
+        shortcut_char_layout.addStretch()
+        settings_layout.addLayout(shortcut_char_layout)
+
         # ----------------- 6. Backup / Restore -------------
         backup_layout = QHBoxLayout()
         export_btn = QPushButton("Export Snippets…")
@@ -234,6 +244,7 @@ class MainWindow(QMainWindow):
         # Save references
         self._auto_start_checkbox = auto_start_checkbox
         self._trigger_combo = trigger_combo
+        self._shortcut_char_combo = shortcut_char_combo
 
         # Initialise UI with current config values
         self._reload_settings_ui()
@@ -268,7 +279,7 @@ class MainWindow(QMainWindow):
         # Usage list (HTML list)
         usage_label = QLabel(
             "<ul style='margin-left:16px; padding:0 0 0 0;'>"
-            "<li>Write a shortcut starting with ':'</li>"
+            "<li>Write a shortcut starting with the configured character (default: ':')</li>"
             "<li>Press Space or Enter to expand the text</li>"
             "<li>Use Backspace to undo the last expansion</li>"
             "</ul>")
@@ -841,6 +852,12 @@ class MainWindow(QMainWindow):
         current_trigger = self.config_manager.get("trigger_key", "space").lower()
         self._trigger_combo.setCurrentIndex(0 if current_trigger == "space" else 1)
 
+        # 4) Shortcut character
+        current_shortcut_char = self.config_manager.get("shortcut_character", ":")
+        shortcut_char_index = self._shortcut_char_combo.findText(current_shortcut_char)
+        if shortcut_char_index >= 0:
+            self._shortcut_char_combo.setCurrentIndex(shortcut_char_index)
+
     def _save_settings(self):
         """Applies changes only when user presses Save."""
         # Auto-start
@@ -858,6 +875,10 @@ class MainWindow(QMainWindow):
         # Trigger key
         trig = "space" if self._trigger_combo.currentIndex() == 0 else "enter"
         self.config_manager.set("trigger_key", trig)
+
+        # Shortcut character
+        shortcut_char = self._shortcut_char_combo.currentText()
+        self.config_manager.set("shortcut_character", shortcut_char)
 
         QMessageBox.information(self, "Settings", "Changes saved successfully.")
 
