@@ -71,6 +71,8 @@ Clipdex is an open-source text expander that turns your custom shortcuts into fu
     ```
 
 > **Note:** On Linux, you might need to run the application with `sudo` for the keyboard listener to work correctly.
+> 
+> **Note for macOS:** You need to grant Accessibility permissions for the keyboard listener to work. See [MacOS Installation Guide](README_MACOS.md) for detailed instructions.
 
 ### 🛠️ How to Use
 
@@ -165,6 +167,8 @@ Clipdex, sık kullandığınız metinleri sizin belirlediğiniz kısayollara dö
     ```
 
 > **Not:** Linux'ta, klavye dinleyicisinin doğru çalışması için uygulamayı `sudo` ile çalıştırmanız gerekebilir.
+> 
+> **macOS için Not:** Klavye dinleyicisinin çalışması için Accessibility izni vermeniz gerekiyor. Detaylı talimatlar için [MacOS Kurulum Rehberi](README_MACOS.md) dosyasına bakın.
 
 ### 🛠️ Nasıl Kullanılır?
 

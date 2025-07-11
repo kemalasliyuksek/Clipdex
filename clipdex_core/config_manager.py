@@ -1,7 +1,7 @@
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Union
 
 from .paths import get_user_data_dir
 
@@ -13,10 +13,10 @@ class ConfigManager:
         "auto_start": False,
     }
 
-    def __init__(self, filepath: str | Path | None = None) -> None:
+    def __init__(self, filepath: Union[str, Path, None] = None) -> None:
         if filepath is None:
             filepath = get_user_data_dir() / "config.json"
-        self.filepath: Path | str = filepath
+        self.filepath: Union[Path, str] = filepath
         self._ensure_file()
 
     # ---------------------------------------------------------------------

@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 import sys
 import shutil
+from typing import Union
 
 from .paths import get_user_data_dir
 
@@ -11,7 +12,7 @@ class SnippetManager:
     Manages shortcut data (snippets) through a JSON file.
     Reads, writes, and ensures the file exists.
     """
-    def __init__(self, filepath: str | Path | None = None):
+    def __init__(self, filepath: Union[str, Path, None] = None):
         """Creates a new SnippetManager.
 
         If *filepath* is not provided, the file path is automatically set to the user's LOCALAPPDATA folder.
@@ -20,7 +21,7 @@ class SnippetManager:
             filepath = get_user_data_dir() / "snippets.json"
 
         # No need to convert Path object to string; os and open accept it.
-        self.filepath: Path | str = filepath
+        self.filepath: Union[Path, str] = filepath
         self._ensure_file_exists()
 
     def _ensure_file_exists(self):
