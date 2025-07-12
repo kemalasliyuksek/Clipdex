@@ -9,13 +9,14 @@ from PyQt6.QtCore import QModelIndex
 from PyQt6.QtCore import Qt
 from pathlib import Path
 from PyQt6.QtCore import QSize
+from PyQt6.QtCore import QTimer
 
 from clipdex_gui.dialogs import SnippetDialog
 
 from clipdex_core.snippet_manager import SnippetManager
 from clipdex_core.config_manager import ConfigManager
 
-# Tema yönetimi için temel yapı
+# Basic theme structure for theme management
 DARK_THEME = {
     "background": "#181a20",
     "foreground": "#f1f1f1",
@@ -47,14 +48,69 @@ LIGHT_THEME = {
     "input_text": "#23272e"
 }
 
+def detect_system_theme():
+    """Detects the system theme automatically."""
+    if sys.platform == "darwin":
+        # macOS system theme detection
+        try:
+            import subprocess
+            result = subprocess.run(['defaults', 'read', '-g', 'AppleInterfaceStyle'], 
+                                  capture_output=True, text=True, timeout=2)
+            if result.returncode == 0 and result.stdout.strip() == 'Dark':
+                return "dark"
+            else:
+                return "light"
+        except (subprocess.TimeoutExpired, FileNotFoundError, Exception):
+            # Default light theme
+            return "light"
+    
+    elif sys.platform.startswith("win"):
+        # Windows system theme detection
+        try:
+            import winreg
+            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, 
+                               r"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize", 
+                               0, winreg.KEY_READ) as key:
+                try:
+                    value, _ = winreg.QueryValueEx(key, "AppsUseLightTheme")
+                    return "light" if value == 1 else "dark"
+                except FileNotFoundError:
+                    return "light"
+        except Exception:
+            return "light"
+    
+    else:
+        # Linux system theme detection
+        try:
+            import subprocess
+            # GTK theme detection
+            result = subprocess.run(['gsettings', 'get', 'org.gnome.desktop.interface', 'color-scheme'], 
+                                  capture_output=True, text=True, timeout=2)
+            if result.returncode == 0:
+                if 'dark' in result.stdout.lower():
+                    return "dark"
+                else:
+                    return "light"
+            
+            # Alternative: Check GTK theme file
+            gtk_theme = subprocess.run(['gsettings', 'get', 'org.gnome.desktop.interface', 'gtk-theme'], 
+                                     capture_output=True, text=True, timeout=2)
+            if gtk_theme.returncode == 0 and 'dark' in gtk_theme.stdout.lower():
+                return "dark"
+            
+            return "light"
+        except (subprocess.TimeoutExpired, FileNotFoundError, Exception):
+            return "light"
+
 def get_theme(theme_name):
     if theme_name == "dark":
         return DARK_THEME
     elif theme_name == "light":
         return LIGHT_THEME
     else:
-        # Sistem teması için varsayılan olarak light döndür (ileride sistemden okunabilir)
-        return LIGHT_THEME
+        # System theme detection
+        system_theme = detect_system_theme()
+        return get_theme(system_theme)
 
 class _HoverDelegate(QStyledItemDelegate):
     """Custom delegate to paint the entire row in selection color when cursor is hovering over it."""
@@ -222,7 +278,15 @@ class MainWindow(QMainWindow):
 
         # Add shortcuts tab
         self.tab_widget.addTab(shortcuts_widget, "Shortcuts")
-        self.apply_theme("dark")  # Varsayılan olarak dark tema uygula, ileride ayarlardan alınacak
+        
+        # System theme change listener
+        self._theme_timer = QTimer()
+        self._theme_timer.timeout.connect(self._check_system_theme_change)
+        self._theme_timer.start(5000)  # Her 5 saniyede bir kontrol et
+        
+        # Apply current theme
+        current_theme = self.config_manager.get("theme", "system")
+        self.apply_theme(current_theme)
 
     def create_settings_tab(self):
         """Creates the Settings tab."""
@@ -240,7 +304,7 @@ class MainWindow(QMainWindow):
         auto_start_checkbox = QCheckBox(auto_start_text)
         settings_layout.addWidget(auto_start_checkbox)
 
-        # ----------------- 2. Tema seçimi -----------------
+        # ----------------- 2. Theme selection -----------------
         theme_layout = QHBoxLayout()
         theme_label = QLabel("Theme:")
         theme_combo = QComboBox()
@@ -250,7 +314,7 @@ class MainWindow(QMainWindow):
         theme_layout.addStretch()
         settings_layout.addLayout(theme_layout)
         self._theme_combo = theme_combo
-        # Tema değişince uygula
+        # Apply theme when changed
         theme_combo.currentIndexChanged.connect(self._on_theme_changed)
 
         # ----------------- 3. Trigger key -----------------
@@ -383,7 +447,7 @@ class MainWindow(QMainWindow):
         """Sets up the table with modern styling."""
         self.table.setColumnCount(3)
         self.table.setHorizontalHeaderLabels(["#", "Shortcut", "Expansion"])
-        # Alternating row colors ve diğer ayarlar burada kalacak, stil apply_theme ile verilecek
+        # Alternating row colors and other settings will be applied with apply_theme
         self.table.setAlternatingRowColors(True)
         vertical_header = self.table.verticalHeader()
         if vertical_header is not None:
@@ -881,7 +945,8 @@ class MainWindow(QMainWindow):
             theme = "dark"
         self.config_manager.set("theme", theme)
         if theme == "system":
-            self.apply_theme("light")
+            detected_theme = detect_system_theme()
+            self.apply_theme(detected_theme)
         else:
             self.apply_theme(theme)
 
@@ -1141,6 +1206,14 @@ X-GNOME-Autostart-enabled=true
         # Kısa yol sayısı etiketi
         self.count_label.setStyleSheet(f"color: gray; font-size: 11px; margin: 4px; background: transparent;")
 
+    def _check_system_theme_change(self):
+        """Sistem teması değişikliklerini kontrol eder ve gerekirse günceller."""
+        current_theme = self.config_manager.get("theme", "system")
+        if current_theme == "system":
+            # Sistem teması ayarlanmışsa, değişiklikleri kontrol et
+            detected_theme = detect_system_theme()
+            self.apply_theme(detected_theme)
+
     def _on_theme_changed(self):
         idx = self._theme_combo.currentIndex()
         if idx == 0:
@@ -1150,9 +1223,10 @@ X-GNOME-Autostart-enabled=true
         else:
             theme = "dark"
         self.config_manager.set("theme", theme)
-        # Uygula
+        # Apply theme
         if theme == "system":
-            self.apply_theme("light")  # Şimdilik sistem için light, ileride otomatik algı eklenebilir
+            detected_theme = detect_system_theme()
+            self.apply_theme(detected_theme)
         else:
             self.apply_theme(theme)
 
