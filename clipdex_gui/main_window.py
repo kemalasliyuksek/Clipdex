@@ -15,6 +15,47 @@ from clipdex_gui.dialogs import SnippetDialog
 from clipdex_core.snippet_manager import SnippetManager
 from clipdex_core.config_manager import ConfigManager
 
+# Tema yönetimi için temel yapı
+DARK_THEME = {
+    "background": "#181a20",
+    "foreground": "#f1f1f1",
+    "alternate": "#23272e",
+    "border": "#23272e",
+    "highlight": "#3a3f4b",
+    "highlighted_text": "#ffffff",
+    "button": "#23272e",
+    "button_text": "#f1f1f1",
+    "mid": "#23272e",
+    "midlight": "#262a31",
+    "input_bg": "#23272e",
+    "input_border": "#3a3f4b",
+    "input_text": "#f1f1f1"
+}
+LIGHT_THEME = {
+    "background": "#ffffff",
+    "foreground": "#23272e",
+    "alternate": "#f3f3f3",
+    "border": "#e0e0e0",
+    "highlight": "#e6f0fa",
+    "highlighted_text": "#23272e",
+    "button": "#f3f3f3",
+    "button_text": "#23272e",
+    "mid": "#e0e0e0",
+    "midlight": "#f5f5f5",
+    "input_bg": "#ffffff",
+    "input_border": "#b0b0b0",
+    "input_text": "#23272e"
+}
+
+def get_theme(theme_name):
+    if theme_name == "dark":
+        return DARK_THEME
+    elif theme_name == "light":
+        return LIGHT_THEME
+    else:
+        # Sistem teması için varsayılan olarak light döndür (ileride sistemden okunabilir)
+        return LIGHT_THEME
+
 class _HoverDelegate(QStyledItemDelegate):
     """Custom delegate to paint the entire row in selection color when cursor is hovering over it."""
 
@@ -181,6 +222,7 @@ class MainWindow(QMainWindow):
 
         # Add shortcuts tab
         self.tab_widget.addTab(shortcuts_widget, "Shortcuts")
+        self.apply_theme("dark")  # Varsayılan olarak dark tema uygula, ileride ayarlardan alınacak
 
     def create_settings_tab(self):
         """Creates the Settings tab."""
@@ -198,7 +240,20 @@ class MainWindow(QMainWindow):
         auto_start_checkbox = QCheckBox(auto_start_text)
         settings_layout.addWidget(auto_start_checkbox)
 
-        # ----------------- 2. Trigger key -----------------
+        # ----------------- 2. Tema seçimi -----------------
+        theme_layout = QHBoxLayout()
+        theme_label = QLabel("Theme:")
+        theme_combo = QComboBox()
+        theme_combo.addItems(["System", "Light", "Dark"])
+        theme_layout.addWidget(theme_label)
+        theme_layout.addWidget(theme_combo)
+        theme_layout.addStretch()
+        settings_layout.addLayout(theme_layout)
+        self._theme_combo = theme_combo
+        # Tema değişince uygula
+        theme_combo.currentIndexChanged.connect(self._on_theme_changed)
+
+        # ----------------- 3. Trigger key -----------------
         trigger_layout = QHBoxLayout()
         trigger_label = QLabel("Trigger key:")
         trigger_combo = QComboBox()
@@ -208,7 +263,7 @@ class MainWindow(QMainWindow):
         trigger_layout.addStretch()
         settings_layout.addLayout(trigger_layout)
 
-        # ----------------- 3. Shortcut character -----------------
+        # ----------------- 4. Shortcut character -----------------
         shortcut_char_layout = QHBoxLayout()
         shortcut_char_label = QLabel("Shortcut character:")
         shortcut_char_combo = QComboBox()
@@ -328,103 +383,23 @@ class MainWindow(QMainWindow):
         """Sets up the table with modern styling."""
         self.table.setColumnCount(3)
         self.table.setHorizontalHeaderLabels(["#", "Shortcut", "Expansion"])
-
-        # Modern table styling with system theme support
-        self.table.setStyleSheet("""
-            QTableWidget {
-                gridline-color: palette(mid);
-                background-color: palette(base);
-                alternate-background-color: palette(alternate-base);
-                selection-background-color: palette(highlight);
-                selection-color: palette(highlighted-text);
-                border: 1px solid palette(mid);
-                border-radius: 6px;
-                font-size: 13px;
-                font-family: 'Segoe UI', Arial, sans-serif;
-                outline: none;
-            }
-            QTableWidget::item {
-                padding: 8px 12px;
-                border: none;
-                color: palette(text);
-                min-height: 20px;
-                text-align: left;
-            }
-            QTableWidget::item:selected {
-                background-color: palette(highlight);
-                color: palette(highlighted-text);
-                font: bold 16px;
-            }
-            QTableWidget::item:selected:alternate {
-                background-color: palette(highlight);
-                color: palette(highlighted-text);
-                font: bold 16px;
-            }
-            QTableWidget::item:hover {
-                background-color: palette(midlight);
-            }
-            QTableWidget::item:focus {
-                background-color: palette(highlight);
-                color: palette(highlighted-text);
-            }
-            QTableWidget::item:focus:alternate {
-                background-color: palette(highlight);
-                color: palette(highlighted-text);
-            }
-            QHeaderView::section {
-                background-color: palette(button);
-                color: palette(button-text);
-                padding: 8px 12px;
-                border: none;
-                border-bottom: 1px solid palette(mid);
-                font-weight: 600;
-                font-size: 12px;
-                text-align: left;
-                min-height: 25px;
-            }
-            QHeaderView::section:hover {
-                background-color: palette(midlight);
-            }
-            QTableWidget::item:alternate {
-                background-color: #23272e;
-            }
-            QTableWidget::item:selected:!focus {
-                background-color: palette(highlight);
-                color: palette(highlighted-text);
-                font: bold 16px;
-            }
-            QTableWidget::item:alternate:selected:!focus {
-                background-color: palette(highlight);  
-                color: palette(highlighted-text);
-                font-weight: bold;
-            }
-        """)
-
-        # Enable alternating row colors
+        # Alternating row colors ve diğer ayarlar burada kalacak, stil apply_theme ile verilecek
         self.table.setAlternatingRowColors(True)
-        
-        # Set row height for better readability
         vertical_header = self.table.verticalHeader()
         if vertical_header is not None:
-            vertical_header.setDefaultSectionSize(50)  # Increased height for better content visibility
-            vertical_header.setVisible(False)  # Hide row numbers
-
+            vertical_header.setDefaultSectionSize(50)
+            vertical_header.setVisible(False)
         header = self.table.horizontalHeader()
         if header is not None:
             header.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
             header.setSectionResizeMode(1, QHeaderView.ResizeMode.Interactive)
             header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
             header.setStretchLastSection(True)
-
-        self.table.setColumnWidth(0, 50)   # Width for the numbering column
-        self.table.setColumnWidth(1, 120)  # Shortcut column
-        self.table.setSortingEnabled(True)  # Enable sorting
-        
-        # Set selection behavior
+        self.table.setColumnWidth(0, 50)
+        self.table.setColumnWidth(1, 120)
+        self.table.setSortingEnabled(True)
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
-        
-        # Force selection highlighting
         self.table.setFocusPolicy(self.table.focusPolicy())
 
     def populate_table(self):
@@ -801,7 +776,7 @@ class MainWindow(QMainWindow):
         elif sys.platform == "darwin":
             self._update_macos_auto_start(enabled)
         else:
-            # Linux - create desktop entry
+            # Linux
             self._update_linux_auto_start(enabled)
 
     def _change_trigger_key(self, value: str):
@@ -849,27 +824,34 @@ class MainWindow(QMainWindow):
         enabled_cfg = bool(self.config_manager.get("auto_start", False))
         self._auto_start_checkbox.setChecked(enabled_cfg)
 
-        # 2) Sync with platform-specific auto-start (all platforms)
+        # 2) Tema seçimi
+        theme = self.config_manager.get("theme", "system")
+        if theme == "system":
+            self._theme_combo.setCurrentIndex(0)
+        elif theme == "light":
+            self._theme_combo.setCurrentIndex(1)
+        else:
+            self._theme_combo.setCurrentIndex(2)
+
+        # 3) Sync with platform-specific auto-start (all platforms)
         if sys.platform.startswith("win"):
             reg_enabled = self._is_auto_start_enabled()
             if reg_enabled != enabled_cfg:
-                # Fix silently – config is always the single source of truth
                 self._update_auto_start_registry(enabled_cfg)
         elif sys.platform == "darwin":
             macos_enabled = self._is_auto_start_enabled()
             if macos_enabled != enabled_cfg:
                 self._update_macos_auto_start(enabled_cfg)
         else:
-            # Linux
             linux_enabled = self._is_auto_start_enabled()
             if linux_enabled != enabled_cfg:
                 self._update_linux_auto_start(enabled_cfg)
 
-        # 3) Trigger key
+        # 4) Trigger key
         current_trigger = self.config_manager.get("trigger_key", "space").lower()
         self._trigger_combo.setCurrentIndex(0 if current_trigger == "space" else 1)
 
-        # 4) Shortcut character
+        # 5) Shortcut character
         current_shortcut_char = self.config_manager.get("shortcut_character", ":")
         shortcut_char_index = self._shortcut_char_combo.findText(current_shortcut_char)
         if shortcut_char_index >= 0:
@@ -888,6 +870,20 @@ class MainWindow(QMainWindow):
             self._update_macos_auto_start(enabled_auto)
         else:
             self._update_linux_auto_start(enabled_auto)
+
+        # Tema
+        idx = self._theme_combo.currentIndex()
+        if idx == 0:
+            theme = "system"
+        elif idx == 1:
+            theme = "light"
+        else:
+            theme = "dark"
+        self.config_manager.set("theme", theme)
+        if theme == "system":
+            self.apply_theme("light")
+        else:
+            self.apply_theme(theme)
 
         # Trigger key
         trig = "space" if self._trigger_combo.currentIndex() == 0 else "enter"
@@ -1032,6 +1028,133 @@ X-GNOME-Autostart-enabled=true
         self.tray_icon.activated.connect(self._on_tray_icon_activated)
         
         self.tray_icon.show()
+
+    def apply_theme(self, theme_name):
+        theme = get_theme(theme_name)
+        # Tablo stili
+        self.table.setStyleSheet(f"""
+            QTableWidget {{
+                gridline-color: {theme['mid']};
+                background-color: {theme['background']};
+                alternate-background-color: {theme['alternate']};
+                selection-background-color: {theme['highlight']};
+                selection-color: {theme['highlighted_text']};
+                border: 1px solid {theme['border']};
+                border-radius: 6px;
+                font-size: 13px;
+                font-family: 'Segoe UI', Arial, sans-serif;
+                outline: none;
+            }}
+            QTableWidget::item {{
+                padding: 8px 12px;
+                border: none;
+                color: {theme['foreground']};
+                min-height: 20px;
+                text-align: left;
+            }}
+            QTableWidget::item:selected {{
+                background-color: {theme['highlight']};
+                color: {theme['highlighted_text']};
+                font: bold 16px;
+            }}
+            QTableWidget::item:selected:alternate {{
+                background-color: {theme['highlight']};
+                color: {theme['highlighted_text']};
+                font: bold 16px;
+            }}
+            QTableWidget::item:hover {{
+                background-color: {theme['midlight']};
+            }}
+            QTableWidget::item:focus {{
+                background-color: {theme['highlight']};
+                color: {theme['highlighted_text']};
+            }}
+            QTableWidget::item:focus:alternate {{
+                background-color: {theme['highlight']};
+                color: {theme['highlighted_text']};
+            }}
+            QHeaderView::section {{
+                background-color: {theme['button']};
+                color: {theme['button_text']};
+                padding: 8px 12px;
+                border: none;
+                border-bottom: 1px solid {theme['mid']};
+                font-weight: 600;
+                font-size: 12px;
+                text-align: left;
+                min-height: 25px;
+            }}
+            QHeaderView::section:hover {{
+                background-color: {theme['midlight']};
+            }}
+            QTableWidget::item:alternate {{
+                background-color: {theme['alternate']};
+            }}
+            QTableWidget::item:selected:!focus {{
+                background-color: {theme['highlight']};
+                color: {theme['highlighted_text']};
+                font: bold 16px;
+            }}
+            QTableWidget::item:alternate:selected:!focus {{
+                background-color: {theme['highlight']};  
+                color: {theme['highlighted_text']};
+                font-weight: bold;
+            }}
+        """)
+        # Arka plan
+        self.setStyleSheet(f"background-color: {theme['background']}; color: {theme['foreground']};")
+        # Arama kutusu
+        self.search_box.setStyleSheet(f"""
+            QLineEdit {{
+                padding: 8px 12px;
+                border: 1px solid {theme['input_border']};
+                border-radius: 6px;
+                background-color: {theme['input_bg']};
+                color: {theme['input_text']};
+                font-size: 13px;
+                font-family: 'Segoe UI', Arial, sans-serif;
+            }}
+            QLineEdit:focus {{
+                border: 2px solid {theme['highlight']};
+            }}
+        """)
+        # Butonlar
+        btn_style = f"font-size: 15px; font-weight: bold; background-color: {theme['button']}; color: {theme['button_text']}; border-radius: 6px; border: 1px solid {theme['border']};"
+        self.add_btn.setStyleSheet(btn_style)
+        self.edit_btn.setStyleSheet(btn_style)
+        self.delete_btn.setStyleSheet(btn_style)
+        # Test kutusu
+        self.test_textbox.setStyleSheet(f"""
+            QTextEdit {{
+                padding: 8px 12px;
+                border: 1px solid {theme['input_border']};
+                border-radius: 6px;
+                background-color: {theme['input_bg']};
+                color: {theme['input_text']};
+                font-size: 13px;
+                font-family: 'Segoe UI', Arial, sans-serif;
+            }}
+            QTextEdit:focus {{
+                border: 2px solid {theme['highlight']};
+            }}
+        """)
+        # Kısa yol sayısı etiketi
+        self.count_label.setStyleSheet(f"color: gray; font-size: 11px; margin: 4px; background: transparent;")
+
+    def _on_theme_changed(self):
+        idx = self._theme_combo.currentIndex()
+        if idx == 0:
+            theme = "system"
+        elif idx == 1:
+            theme = "light"
+        else:
+            theme = "dark"
+        self.config_manager.set("theme", theme)
+        # Uygula
+        if theme == "system":
+            self.apply_theme("light")  # Şimdilik sistem için light, ileride otomatik algı eklenebilir
+        else:
+            self.apply_theme(theme)
 
 # Test the main execution block
 if __name__ == '__main__':
