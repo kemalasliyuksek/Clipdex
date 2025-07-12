@@ -386,7 +386,7 @@ class MainWindow(QMainWindow):
                 background-color: palette(midlight);
             }
             QTableWidget::item:alternate {
-                background-color: palette(alternate-base);
+                background-color: #23272e;
             }
             QTableWidget::item:selected:!focus {
                 background-color: palette(highlight);
