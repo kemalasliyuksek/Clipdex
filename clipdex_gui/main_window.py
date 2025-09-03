@@ -3,6 +3,7 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QTableWidget, QTableWidg
                              QPushButton, QVBoxLayout, QWidget, QHBoxLayout, QHeaderView, QMessageBox,
                              QTabWidget, QLabel, QTextEdit, QLineEdit, QStyledItemDelegate, QStyleOptionViewItem, QStyle,
                              QSystemTrayIcon, QMenu, QCheckBox, QComboBox, QFileDialog)
+import json
 from PyQt6.QtGui import QFont, QMouseEvent, QAction, QIcon
 from PyQt6.QtCore import QEvent
 from PyQt6.QtCore import QModelIndex
@@ -279,10 +280,10 @@ class MainWindow(QMainWindow):
         # Add shortcuts tab
         self.tab_widget.addTab(shortcuts_widget, "Shortcuts")
         
-        # System theme change listener
+        # System theme change listener - check less frequently to reduce system load
         self._theme_timer = QTimer()
         self._theme_timer.timeout.connect(self._check_system_theme_change)
-        self._theme_timer.start(5000)  # Her 5 saniyede bir kontrol et
+        self._theme_timer.start(30000)  # Check every 30 seconds instead of 5
         
         # Apply current theme
         current_theme = self.config_manager.get("theme", "system")
@@ -627,13 +628,16 @@ class MainWindow(QMainWindow):
         """Clear the selection when clicking on Add/Edit/Delete buttons or outside the table."""
         if event.type() == QEvent.Type.MouseButtonPress and isinstance(event, QMouseEvent):
             # Determine the clicked widget based on the global position
-            from PyQt6.QtWidgets import QApplication as _QApp
-            app = _QApp.instance()
+            app = QApplication.instance()
             if app is None:
                 return super().eventFilter(watched, event)
 
             global_pos = event.globalPosition().toPoint()
-            clicked_widget = _QApp.widgetAt(global_pos)
+            clicked_widget = QApplication.widgetAt(global_pos)
+
+            # Check if clicked_widget is None
+            if clicked_widget is None:
+                return super().eventFilter(watched, event)
 
             # Protected widget list (table + buttons)
             protected_widgets = (self.table, self.add_btn, self.edit_btn, self.delete_btn)
@@ -855,7 +859,6 @@ class MainWindow(QMainWindow):
             try:
                 data = self.snippet_manager.load_snippets()
                 with open(dest, "w", encoding="utf-8") as f:
-                    import json
                     json.dump(data, f, indent=4, ensure_ascii=False)
                 QMessageBox.information(self, "Success", "Snippets exported successfully.")
             except Exception as e:
@@ -866,7 +869,6 @@ class MainWindow(QMainWindow):
         src, _ = QFileDialog.getOpenFileName(self, "Import Snippets", "", "JSON Files (*.json)")
         if src:
             try:
-                import json
                 with open(src, "r", encoding="utf-8") as f:
                     snippets = json.load(f)
                 if not isinstance(snippets, dict):

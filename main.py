@@ -1,6 +1,5 @@
 import sys
 import threading
-import platform
 from PyQt6.QtWidgets import QApplication, QMessageBox
 
 from clipdex_gui.main_window import MainWindow
@@ -19,7 +18,7 @@ def run_backend_listener():
         print("Backend listener thread finished.")
     except Exception as e:
         print(f"Listener error: {e}")
-        if platform.system() == "Darwin":
+        if sys.platform == "darwin":
             print("Check Accessibility permissions on macOS!")
 
 def show_macos_permission_dialog():
@@ -43,7 +42,7 @@ def main():
     Starts the GUI and runs the backend in a separate thread.
     """
     # Check if we're on MacOS and show permission info if needed
-    if platform.system() == "Darwin":
+    if sys.platform == "darwin":
         print("macOS detected - Checking permissions...")
     
     # 1. Start the backend listener in a separate daemon thread

@@ -1,4 +1,5 @@
 {
     "trigger_key": "space",
-    "auto_start": false
+    "auto_start": false,
+    "shortcut_character": ":"
 }
